@@ -66,7 +66,9 @@ export function MoneyPanel({ onToast }: { onToast: (m: string) => void }) {
   }, []);
 
   useEffect(() => {
-    load();
+    // Schedule async loading after the effect; cancel the pending start on unmount.
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   async function call(op: string, body: Record<string, unknown> = {}) {

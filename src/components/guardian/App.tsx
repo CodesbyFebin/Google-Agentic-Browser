@@ -105,19 +105,17 @@ export default function App(){
   const [focusSec,setFocusSec]=useState(25*60); const [focusRunning,setFocusRunning]=useState(false);
   const [playing,setPlaying]=useState(false); const [pip,setPip]=useState(false);
   const [showPipOnScroll,setShowPipOnScroll]=useState(false);
-  const [quotaOn,setQuotaOn]=useState(false);
+  const [quotaOn,setQuotaOn]=useState(true);
   const [txQ,setTxQ]=useState('');
   const [widgetOrderName,setWidgetOrderName]=useState('Gemini Order'); const [widgetOrderAmt,setWidgetOrderAmt]=useState('499');
   const toastId=useRef(0);
   const active = tabs.find(t=>t.id===activeTab) || tabs[0];
   const fmt=(n:number)=>`₹${n.toLocaleString('en-IN')}`;
 
-  useEffect(()=>{ setQuotaOn(true); },[]);
   useEffect(()=>{ const h=()=>setShowPipOnScroll(window.scrollY>320); window.addEventListener('scroll',h); return ()=>window.removeEventListener('scroll',h); },[]);
   useEffect(()=>{ if(!focusRunning) return; const t=setInterval(()=>setFocusSec(s=>Math.max(0,s-1)),1000); return ()=>clearInterval(t); },[focusRunning]);
   useEffect(()=>{ if(!executing) return; const t=setInterval(()=>{ setExecIndex(i=>{ if(i>=planSteps.length-1){ setExecuting(false); return i; } return i+1; }); },1100); return ()=>clearInterval(t); },[executing,planSteps.length]);
   useEffect(()=>{ const t=setInterval(()=>{ setApprovals(list=>list.map(a=>a.autoIn&&a.autoIn>0?{...a,autoIn:a.autoIn-1}:a)); },1000); return ()=>clearInterval(t); },[]);
-  useEffect(()=>{ approvals.forEach(a=>{ if(a.autoIn===0){ approve(a,true); } }); },[approvals]);
   useEffect(()=>{
     (async()=>{
       try{
@@ -137,6 +135,14 @@ export default function App(){
     setTxs(t=>[{id:Date.now(),name:a.title.split('·')[1]?.trim()||'Payment',amount:a.amount,cat:'Approved',rule:auto?'Auto-approved · Supervised':a.risk==='High'?'Approved by you':'Approved',space:'Money',time:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}),icon:'✓'},...t]);
     log(`${a.title} ${auto?'auto-approved · Supervised':'approved · You'}`); toast(`Approved ${a.title}`);
   }
+  useEffect(()=>{
+    // Demo-only countdown: defer updates so no state changes occur during effect setup.
+    const timer = window.setTimeout(()=>{
+      approvals.forEach(a=>{ if(a.autoIn===0) approve(a,true); });
+    },0);
+    return ()=>window.clearTimeout(timer);
+  },[approvals]);
+
   function deny(a:Approval){ setApprovals(v=>v.filter(x=>x.id!==a.id)); log(`${a.title} rejected · You`); toast(`Rejected ${a.title}`); }
   function approveAll(){ if(!approvals.length){toast('No pending approvals'); return;} const total=approvals.reduce((x,y)=>x+y.amount,0); setBalance(b=>b-total); setSpent(s=>s+total); setApprovals([]); log(`All ${approvals.length} approvals approved · You`); toast(`Approved ${approvals.length} payments`); }
   function requestApproval(name:string,amt:number){
@@ -195,9 +201,25 @@ export default function App(){
   const filteredFeed=feed.filter(f=>feedFilter==='All'||f.source===feedFilter);
   const filteredTx=useMemo(()=>txs.filter(t=>(space==='All'||t.space===space)&&(t.name+t.cat).toLowerCase().includes(txQ.toLowerCase())),[txs,space,txQ]);
   const suggested = activeTab==='money' ? ['Approve pending payments','Create a ₹499 order','Summarize spend today'] : ['Summarize this page','Plan my Friday','Book a meeting'];
+  // Filter only serializable command metadata during render; execute actions on click.
   const commands=[
-    {label:'New Tab',action:newTab},{label:'Approve all payments',action:approveAll},{label:'Plan my Friday',action:()=>askGemini('Plan my Friday')},{label:'Book a meeting',action:()=>askGemini('Book a meeting')},{label:'Create order ₹499',action:()=>createOrder('Gemini Order',499)},{label:'Open Money OS',action:()=>{setMobileView('money'); setActiveTab('money');}},{label:'Clean up tabs',action:cleanTabs},{label:'Erase my data',action:()=>setSheet('erase')},
+    {label:'New Tab',key:'new-tab'},{label:'Approve all payments',key:'approve-all'},
+    {label:'Plan my Friday',key:'plan'},{label:'Book a meeting',key:'meeting'},
+    {label:'Create order ₹499',key:'order'},{label:'Open Money OS',key:'money'},
+    {label:'Clean up tabs',key:'clean'},{label:'Erase my data',key:'erase'},
   ].filter(c=>c.label.toLowerCase().includes(paletteQ.toLowerCase()));
+  function runCommand(key:string){
+    switch(key){
+      case 'new-tab': newTab(); break;
+      case 'approve-all': approveAll(); break;
+      case 'plan': askGemini('Plan my Friday'); break;
+      case 'meeting': askGemini('Book a meeting'); break;
+      case 'order': createOrder('Gemini Order',499); break;
+      case 'money': setMobileView('money'); setActiveTab('money'); break;
+      case 'clean': cleanTabs(); break;
+      case 'erase': setSheet('erase'); break;
+    }
+  }
   function goHome(){ setActiveTab('home'); setMobileView('home'); window.scrollTo({top:0,behavior:'smooth'}); }
   function goMoney(){ setActiveTab('money'); setMobileView('money'); window.scrollTo({top:0,behavior:'smooth'}); }
 
@@ -219,7 +241,7 @@ export default function App(){
     return null;
   }
   function GeminiPanel(){ return <div className="flex flex-col min-h-0 flex-1">
-    <div className="flex-1 overflow-y-auto px-1 py-1 space-y-2.5 min-h-[240px]">{geminiMsgs.map((m,i)=><div key={i} className={`rounded-2xl px-3 py-3 text-[15px] leading-relaxed ${m.role==='user'?'bg-blue-600 text-white ml-6':'bg-white/5 border border-white/10'}`}><div>{m.text}</div><Widget msg={m}/></div>)}{thinking&&<div className="bg-white/5 rounded-2xl px-3 py-3 think flex gap-1"><span/><span/><span/></div>}</div>
+    <div className="flex-1 overflow-y-auto px-1 py-1 space-y-2.5 min-h-[240px]">{geminiMsgs.map((m,i)=><div key={i} className={`rounded-2xl px-3 py-3 text-[15px] leading-relaxed ${m.role==='user'?'bg-blue-600 text-white ml-6':'bg-white/5 border border-white/10'}`}><div>{m.text}</div>{Widget({msg:m})}</div>)}{thinking&&<div className="bg-white/5 rounded-2xl px-3 py-3 think flex gap-1"><span/><span/><span/></div>}</div>
     <div className="flex gap-2 overflow-x-auto no-scrollbar py-3">{suggested.map(s=><button key={s} onClick={()=>askGemini(s)} className="chip px-3 py-2.5 rounded-full text-sm whitespace-nowrap min-h-[44px]">{s}</button>)}</div>
     <div className="flex gap-2"><input value={geminiInput} onChange={e=>setGeminiInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&askGemini()} placeholder="Ask Gemini…" className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-full px-4 py-3 text-[15px] min-h-[48px]"/><button aria-label="Send to Gemini" onClick={()=>askGemini()} className="google-bg text-white w-12 h-12 rounded-full flex items-center justify-center shrink-0"><Send size={18}/></button></div>
   </div>; }
@@ -287,16 +309,16 @@ export default function App(){
   </div>; }
 
   function CenterContent(){
-    if(activeTab==='money'||mobileView==='money') return <MoneyPanel/>;
-    if(mobileView==='gemini') return <div className="glass rounded-3xl p-4 min-h-[520px] flex flex-col"><GeminiPanel/></div>;
-    if(mobileView==='activity') return <ActivityPanel/>;
-    if(mobileView==='more') return <div className="space-y-3"><ConnectPanel/><button onClick={()=>setSheet('compliance')} className="chip w-full py-3 rounded-full text-sm min-h-[48px]">Compliance & Privacy</button></div>;
-    if(activeTab==='home') return <HomeCenter/>;
+    if(activeTab==='money'||mobileView==='money') return {MoneyPanel()};
+    if(mobileView==='gemini') return <div className="glass rounded-3xl p-4 min-h-[520px] flex flex-col">{GeminiPanel()}</div>;
+    if(mobileView==='activity') return {ActivityPanel()};
+    if(mobileView==='more') return <div className="space-y-3">{ConnectPanel()}<button onClick={()=>setSheet('compliance')} className="chip w-full py-3 rounded-full text-sm min-h-[48px]">Compliance & Privacy</button></div>;
+    if(activeTab==='home') return {HomeCenter()};
     return <div className="animate-slide space-y-4"><div className="glass rounded-3xl p-4"><div className="relative overflow-hidden rounded-2xl google-bg h-28 flex items-end p-4"><span className="relative text-white text-sm font-bold">{active.space} space · {active.domain}</span></div><h1 className="text-3xl font-black mt-4 leading-tight">{active.title}</h1><p className="text-[var(--muted)] mt-2 text-[15px]">This is a sandbox tab preview. Ask Gemini for a summary, or open Money OS for guarded checkout.</p><button onClick={()=>{setRightTab('Gemini'); askGemini('Summarize this page');}} className="google-bg text-white w-full min-h-[48px] px-4 py-3 rounded-full text-[15px] font-bold flex items-center justify-center gap-2 mt-4"><Sparkles size={18}/> Ask Gemini about this tab</button><button onClick={goMoney} className="chip w-full min-h-[48px] px-4 py-3 rounded-full text-[15px] mt-2">Open Money OS →</button></div><div className="glass rounded-3xl p-4"><div className="font-bold flex gap-2 items-center"><ShoppingBag size={20}/> Pay with guarded checkout</div><p className="text-sm text-[var(--muted)] mt-2">Mode: {autonomy} · {autonomy==='Full Autonomy'?'Will log silently':autonomy==='Supervised Autonomy'?'Low-risk auto-approves in 5s':'Will wait for approval'}</p><button onClick={()=>requestApproval(active.title,499)} className="bg-emerald-500 text-white w-full min-h-[48px] px-5 py-3 rounded-full font-bold text-[15px] mt-4">Request approval — ₹499</button></div></div>;
   }
   function RightPanel(){ return <div className="flex flex-col min-h-0">
     <div className="flex gap-1 bg-white/5 rounded-full p-1">{(['Gemini','Features','Wallet','Connect'] as const).map(t=><button key={t} onClick={()=>setRightTab(t)} className={`flex-1 px-2 py-3 rounded-full text-[13px] font-bold min-h-[48px] ${rightTab===t?'bg-white text-black':'text-white/70'}`}>{t}</button>)}</div>
-    <div className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">{rightTab==='Gemini'&&<GeminiPanel/>}{rightTab==='Features'&&<><ActivityPanel/><div className="mt-4"><ConnectPanel/></div></>}{rightTab==='Wallet'&&<MoneyPanel/>}{rightTab==='Connect'&&<ConnectPanel/>}</div>
+    <div className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">{rightTab==='Gemini'&&{GeminiPanel()}}{rightTab==='Features'&&<>{ActivityPanel()}<div className="mt-4">{ConnectPanel()}</div></>}{rightTab==='Wallet'&&{MoneyPanel()}}{rightTab==='Connect'&&{ConnectPanel()}}</div>
   </div>; }
 
   const sheetTitle = sheet==='gemini'?'Gemini':sheet==='activity'?'Activity':sheet==='more'?'More':sheet==='compliance'?'Privacy & Compliance':sheet==='consent'?'Consent — gmail.modify':sheet==='erase'?'Erase My Data':'';
@@ -318,10 +340,10 @@ export default function App(){
           <div className="px-3 pb-3"><div className="flex items-center gap-1 bg-white/10 border border-white/10 rounded-full px-3 py-1.5 min-h-[52px]"><Lock size={16} className="text-emerald-400 shrink-0"/><input value={askBox} onChange={e=>setAskBox(e.target.value)} onKeyDown={e=>e.key==='Enter'&&askGemini(askBox)} placeholder={active.domain} className="bg-transparent flex-1 min-w-0 text-[15px] outline-none placeholder:text-white/50"/><button aria-label="Voice search" onClick={()=>toast('Voice search is listening…')} className="w-11 h-11 flex items-center justify-center shrink-0"><Mic size={18}/></button><button aria-label="Ask Gemini" onClick={()=>askGemini(askBox||'Summarize this page')} className="w-11 h-11 rounded-full google-bg text-white flex items-center justify-center shrink-0"><Sparkles size={18}/></button><button onClick={()=>setPalette(true)} className="chip px-2.5 py-2 rounded-full text-xs font-bold min-h-[44px] shrink-0 flex items-center gap-1"><Command size={14}/> ⌘K</button></div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar pt-2"><button onClick={()=>setSpace('All')} className={`px-3 py-2.5 rounded-full text-sm whitespace-nowrap min-h-[44px] ${space==='All'?'bg-white text-black font-bold':'chip'}`}>All spaces</button>{SPACES.map(s=><button key={s.name} onClick={()=>setSpace(s.name)} className={`px-3 py-2.5 rounded-full text-sm whitespace-nowrap min-h-[44px] ${space===s.name?'bg-white text-black font-bold':'chip'}`}>{s.name}</button>)}</div></div>
         </header>
-        <main className="px-4 pt-4 pb-32 lg:pb-8"><CenterContent/></main>
+        <main className="px-4 pt-4 pb-32 lg:pb-8">{CenterContent()}</main>
       </div>
 
-      <aside className="hidden lg:block w-[380px] shrink-0 sticky top-4 glass rounded-3xl p-4 max-h-[calc(100vh-2rem)] overflow-y-auto"><RightPanel/></aside>
+      <aside className="hidden lg:block w-[380px] shrink-0 sticky top-4 glass rounded-3xl p-4 max-h-[calc(100vh-2rem)] overflow-y-auto">{RightPanel()}</aside>
     </div>
 
     <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-[430px] bg-[#12161f]/95 backdrop-blur border-t border-white/10 flex justify-around px-1 pt-1 pb-2">
@@ -342,8 +364,8 @@ export default function App(){
       <div className="pt-2 pb-1 flex justify-center"><span className="w-12 h-1.5 rounded-full bg-white/25"/></div>
       <div className="flex items-center justify-between px-4 pb-2"><div><h3 className="font-black text-lg leading-tight">{sheetTitle}</h3><p className="text-xs text-white/50">{sheet==='more'?'Browser controls':sheet==='compliance'?'Demo / sandbox — no real Google login':'Review before you continue'}</p></div><button aria-label="Close sheet" onClick={()=>setSheet(null)} className="w-11 h-11 flex items-center justify-center"><X size={20}/></button></div>
       <div className="px-4 pb-5 overflow-y-auto flex-1 flex flex-col min-h-0">
-        {sheet==='gemini'&&<GeminiPanel/>}{sheet==='activity'&&<ActivityPanel/>}
-        {sheet==='more'&&<div className="space-y-3"><ConnectPanel/><button onClick={()=>setSheet('compliance')} className="chip w-full py-3 rounded-full text-sm min-h-[48px]">Compliance & Privacy</button><button onClick={()=>setSheet('erase')} className="bg-red-500 text-white w-full py-3 rounded-full text-sm font-bold min-h-[48px]">Erase My Data</button></div>}
+        {sheet==='gemini'&&{GeminiPanel()}}{sheet==='activity'&&{ActivityPanel()}}
+        {sheet==='more'&&<div className="space-y-3">{ConnectPanel()}<button onClick={()=>setSheet('compliance')} className="chip w-full py-3 rounded-full text-sm min-h-[48px]">Compliance & Privacy</button><button onClick={()=>setSheet('erase')} className="bg-red-500 text-white w-full py-3 rounded-full text-sm font-bold min-h-[48px]">Erase My Data</button></div>}
         {sheet==='compliance'&&<div className="space-y-4"><div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4"><b className="text-[15px]">Third-party concept prototype - not an official Google product</b><p className="text-sm text-white/70 mt-1">No real Google login. No real data access. All content is demo / sandbox data.</p></div>
           <button onClick={()=>{setMinimize(v=>!v); toast(`Data Minimization ${!minimize?'on':'off'} — Bounded Context`);}} className="w-full flex justify-between items-center bg-white/[.03] border border-white/10 rounded-2xl px-4 py-3 min-h-[52px] text-[15px]"><span>Data Minimization <span className="block text-xs opacity-60">Bounded Context — only data needed for the task</span></span><span className={`w-12 h-7 rounded-full p-0.5 flex shrink-0 ${minimize?'justify-end bg-emerald-500':'bg-white/20'}`}><span className="w-6 h-6 bg-white rounded-full"/></span></button>
           <div><h4 className="font-bold text-[15px] mb-2">Consent log</h4><div className="space-y-1 text-sm text-white/60">{consentLog.map((c,i)=><div key={i}>{c}</div>)}</div></div>
@@ -354,6 +376,6 @@ export default function App(){
       </div>
     </div></div>}
 
-    {palette&&<div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex justify-center items-start" onClick={()=>setPalette(false)}><div className="w-full max-w-[430px] bg-[#171c28] border border-white/15 rounded-b-[28px] overflow-hidden shadow-2xl animate-slide" onClick={e=>e.stopPropagation()}><div className="flex gap-2 p-4 border-b border-white/10 items-center min-h-[64px]"><Command size={20} className="text-white/50"/><input autoFocus value={paletteQ} onChange={e=>setPaletteQ(e.target.value)} placeholder="Search commands…" className="flex-1 bg-transparent outline-none text-[16px] min-w-0"/><button aria-label="Close palette" onClick={()=>setPalette(false)} className="w-11 h-11 flex items-center justify-center"><X size={18}/></button></div><div className="max-h-[55vh] overflow-y-auto p-2">{commands.map(c=><button key={c.label} onClick={()=>{setPalette(false); setPaletteQ(''); c.action();}} className="w-full text-left px-3 py-3 rounded-xl hover:bg-white/10 flex justify-between text-[15px] min-h-[48px]"><span>{c.label}</span><span className="text-white/40">↵</span></button>)}{commands.length===0&&<p className="p-4 text-sm text-white/50">No commands found.</p>}</div><div className="p-3 border-t border-white/10 text-xs text-white/40 flex justify-between"><span>Google Agentic Browser · ⌘K</span><span>Prototype · Sandbox</span></div></div></div>}
+    {palette&&<div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex justify-center items-start" onClick={()=>setPalette(false)}><div className="w-full max-w-[430px] bg-[#171c28] border border-white/15 rounded-b-[28px] overflow-hidden shadow-2xl animate-slide" onClick={e=>e.stopPropagation()}><div className="flex gap-2 p-4 border-b border-white/10 items-center min-h-[64px]"><Command size={20} className="text-white/50"/><input autoFocus value={paletteQ} onChange={e=>setPaletteQ(e.target.value)} placeholder="Search commands…" className="flex-1 bg-transparent outline-none text-[16px] min-w-0"/><button aria-label="Close palette" onClick={()=>setPalette(false)} className="w-11 h-11 flex items-center justify-center"><X size={18}/></button></div><div className="max-h-[55vh] overflow-y-auto p-2">{commands.map(c=><button key={c.label} onClick={()=>{setPalette(false); setPaletteQ(''); runCommand(c.key);}} className="w-full text-left px-3 py-3 rounded-xl hover:bg-white/10 flex justify-between text-[15px] min-h-[48px]"><span>{c.label}</span><span className="text-white/40">↵</span></button>)}{commands.length===0&&<p className="p-4 text-sm text-white/50">No commands found.</p>}</div><div className="p-3 border-t border-white/10 text-xs text-white/40 flex justify-between"><span>Google Agentic Browser · ⌘K</span><span>Prototype · Sandbox</span></div></div></div>}
   </div>;
 }

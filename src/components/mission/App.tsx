@@ -258,13 +258,21 @@ export default function App(){
   },[tabs,active,space,split]);
 
   const commands=[
-    ['Launch mission',()=>{goMission(); run()}],
-    ['Toggle Zen Mode',()=>{setZen(v=>!v); toast('Zen mode toggled');}],
-    ['Next theme',()=>{const k=Object.keys(TH); setTheme(k[(k.indexOf(theme)+1)%k.length]); toast('Theme changed');}],
-    ['Split View — 2 panes',()=>{setSplit(2); toast('2 panes — split view');}],
-    ['Open Recorder',()=>{setRtab('rec'); toast('Recorder opened');}],
-  ] as [string,()=>void][];
-  const paletteItems=[...commands.filter(x=>x[0].toLowerCase().includes(paletteQ.toLowerCase())), ...tabs.filter(t=>t.title.toLowerCase().includes(paletteQ.toLowerCase())).map(t=>[t.title,()=>{setSpace(t.space); setActive(t.id);}] as [string,()=>void])];
+    ['Launch mission','launch'],['Toggle Zen Mode','zen'],['Next theme','theme'],
+    ['Split View — 2 panes','split'],['Open Recorder','rec'],
+  ] as [string,string][];
+  const paletteItems=[
+    ...commands.filter(x=>x[0].toLowerCase().includes(paletteQ.toLowerCase())).map(([title,key])=>[
+      title,()=>{switch(key){
+        case 'launch': goMission(); void run(); break;
+        case 'zen': setZen(v=>!v); toast('Zen mode toggled'); break;
+        case 'theme': {const k=Object.keys(TH); setTheme(k[(k.indexOf(theme)+1)%k.length]); toast('Theme changed'); break;}
+        case 'split': setSplit(2); toast('2 panes — split view'); break;
+        case 'rec': setRtab('rec'); toast('Recorder opened'); break;
+      }}
+    ] as [string,()=>void]),
+    ...tabs.filter(t=>t.title.toLowerCase().includes(paletteQ.toLowerCase())).map(t=>[t.title,()=>{setSpace(t.space); setActive(t.id);}] as [string,()=>void]),
+  ];
 
   const bgStyle = dark? th.bg : '#F2F3F8';
   const panelBg = dark? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.7)';

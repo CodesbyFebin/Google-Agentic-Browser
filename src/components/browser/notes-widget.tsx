@@ -39,7 +39,9 @@ export function NotesWidget({ space, onToast }: Props) {
   }, [space]);
 
   useEffect(() => {
-    load();
+    // Schedule async loading after the effect; cancel the pending start on unmount.
+    const timer = window.setTimeout(() => { void load(); }, 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   async function add() {

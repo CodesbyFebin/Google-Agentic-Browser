@@ -308,7 +308,6 @@ function useRunningFlag(running: boolean, count: number, onDone: () => void) {
     if (!running && count > 0) {
       onDone();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
   return null;
 }
