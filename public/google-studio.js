@@ -20,7 +20,8 @@
     Build: 'Plan a full-stack build with tests and approval gates for: ',
     Custom: '',
   };
-  const state = { status: null, plan: null, files: null, error: '', busy: false, fetchingDrive: false, goal: '', streamText: '', streaming: false, streamError: '', streamAbort: null };
+  const state = { status: null, plan: null, files: null, error: '', busy: false, fetchingDrive: false, goal: '', streamText: '', streaming: false, streamError: '', streamAbort: null,
+    driveQuery: '', selectedFileIds: [], driveMessage: '' };
   const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[c]);
@@ -35,6 +36,9 @@
     if (!state.plan) return '<div class="studio-empty">Describe a goal and generate a real Gemini-powered plan. All steps remain proposed until separately reviewed.</div>';
     const p = state.plan;
     return `<div class="studio-side"><div class="studio-label">Gemini plan · ${html(p.model || 'configured model')}</div><h2 style="margin:8px 0">${html(p.overview)}</h2><p class="studio-muted">This plan is unexecuted. No sites visited, money spent or account changes made.</p></div>
+      ${Array.isArray(p.driveContext?.files) && p.driveContext.files.length ?
+        `<div class="studio-context"><b>Google Drive metadata used · ${p.driveContext.files.length} selected</b><p>Only file names, types and modified dates were fetched. Document contents were not opened or read.</p>
+        ${p.driveContext.files.map(f => `<span class="studio-context-chip">▤ ${html(f.name)}</span>`).join('')}</div>` : ''}
       <div style="margin-top:16px">${(p.steps || []).map((step, index) => {
         const agent = personas.find(a => a[0] === step.agent) || personas[0];
         return `<div class="studio-step"><div class="studio-step-icon">${index + 1}</div><div><small>${html(agent[2])} · PROPOSED</small><b style="margin-top:3px">${html(step.title)}</b><p>${html(step.detail)}</p>${step.requiresApproval ? '<span class="studio-danger">🔒 Human approval required · not executed</span>' : ''}</div></div>`;
@@ -45,12 +49,15 @@
     if (!state.status) return '<p class="studio-muted">Checking account connection…</p>';
     const account = state.status.googleDrive || {};
     if (!account.configured) return '<p class="studio-muted">Google OAuth is not configured on this server. Add the OAuth credentials from <code>.env.example</code> to enable read-only Drive metadata.</p>';
-    if (!account.connected) return `<p class="studio-muted">Connect your account to view recent Drive file names. Only <b>Drive metadata read-only</b> permission is requested. No documents are downloaded or modified.</p><a class="studio-button" href="/api/google/oauth/start" style="margin-top:10px">Connect Google account ↗</a>`;
+    if (!account.connected) return `<p class="studio-muted">Connect your account to search Drive file names and optionally use selected metadata in a Gemini plan. Only <b>Drive metadata read-only</b> permission is requested. No documents are downloaded or modified.</p><a class="studio-button" href="/api/google/oauth/start" style="margin-top:10px">Connect Google account ↗</a>`;
     const fileList = state.files;
     return `<p class="studio-muted">Connected as ${html(account.email || 'Google user')}. Access expires automatically; no refresh tokens are stored.</p>
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button data-studio="files" class="studio-button" ${state.fetchingDrive ? 'disabled' : ''}>${state.fetchingDrive ? 'Loading…' : '↻ View recent files'}</button><button data-studio="disconnect" class="studio-button">Disconnect</button></div>
+      <form id="studio-drive-search-form" class="studio-drive-search"><label class="studio-label" for="studio-drive-query">Find Drive files by name</label><div><input type="search" id="studio-drive-query" class="studio-input" maxlength="100" placeholder="Search file names (or leave blank for recent)" value="${html(state.driveQuery)}" ${state.fetchingDrive ? 'disabled' : ''}><button type="submit" class="studio-button" ${state.fetchingDrive ? 'disabled' : ''}>${state.fetchingDrive ? 'Searching…' : '⌕ Search'}</button></div></form>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button data-studio="files" class="studio-button" ${state.fetchingDrive ? 'disabled' : ''}>↻ Refresh results</button><button data-studio="disconnect" class="studio-button">Disconnect</button></div>
+      <p class="studio-muted" style="margin:8px 0">Select up to 3 files to include <b>metadata only</b> in your next Gemini plan. ${state.selectedFileIds.length} selected. Nothing is shared until you generate the plan.</p>
+      ${state.driveMessage ? `<p role="status" class="studio-muted" style="color:#ffc98c">${html(state.driveMessage)}</p>` : ''}
       ${fileList?.error ? `<p role="alert" class="studio-muted" style="color:#ffc98c;margin-top:8px">${html(fileList.error)}</p>` : ''}
-      ${Array.isArray(fileList?.files) ? fileList.files.map(f => `<div class="studio-drive-file"><b>▤ ${html(f.name)}</b><small>${html(f.mimeType)}${f.modifiedTime ? ` · ${html(f.modifiedTime.slice(0, 10))}` : ''}</small>${typeof f.url === 'string' && /^https:\/\/drive\.google\.com\//.test(f.url) ? `<br><a href="${html(f.url)}" target="_blank" rel="noopener noreferrer">Open in Drive ↗</a>` : ''}</div>`).join('') || '<p class="studio-muted">No recent files returned.</p>' : ''}`;
+      ${Array.isArray(fileList?.files) ? fileList.files.map(f => `<div class="studio-drive-file"><label class="studio-drive-choice"><input type="checkbox" data-studio-file="${html(f.id)}" aria-label="Use metadata from ${html(f.name)}" ${state.selectedFileIds.includes(f.id) ? 'checked' : ''}><span><b>▤ ${html(f.name)}</b><small>${html(f.mimeType)}${f.modifiedTime ? ` · ${html(f.modifiedTime.slice(0, 10))}` : ''}</small></span></label>${typeof f.url === 'string' && /^https:\/\/(?:drive|docs|sheets|slides)\.google\.com\//.test(f.url) ? `<a href="${html(f.url)}" target="_blank" rel="noopener noreferrer">Open in Google Workspace ↗</a>` : ''}</div>`).join('') || '<p class="studio-muted">No matching files returned.</p>' : ''}`;
   }
 
 
@@ -143,14 +150,20 @@
     state.plan = null;
     state.busy = true;
     repaint();
-    try { state.plan = await getJSON('/api/agent/studio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ goal }) }); }
+    try { state.plan = await getJSON('/api/agent/studio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ goal, fileIds: state.selectedFileIds }) }); }
     catch (error) { state.error = error.message; }
     finally { state.busy = false; repaint(); }
   }
-  async function loadFiles() {
+  async function loadFiles(search = state.driveQuery) {
+    state.driveQuery = search;
+    state.driveMessage = '';
     state.fetchingDrive = true;
     repaint();
-    try { state.files = await getJSON('/api/google/drive'); }
+    try {
+      state.files = await getJSON('/api/google/drive?q=' + encodeURIComponent(search));
+      const currentIds = new Set(state.files.files.map(f => f.id));
+      state.selectedFileIds = state.selectedFileIds.filter(id => currentIds.has(id));
+    }
     catch (error) { state.files = { error: error.message }; }
     finally { state.fetchingDrive = false; repaint(); }
   }
@@ -178,10 +191,35 @@
     sidebar.insertBefore(button, sidebar.lastElementChild);
   }
   document.addEventListener('submit', event => {
-    if (event.target.id !== 'studio-goal-form') return;
-    event.preventDefault();
-    const goal = event.target.querySelector('textarea')?.value.trim();
-    if (goal) plan(goal);
+    if (event.target.id === 'studio-goal-form') {
+      event.preventDefault();
+      const goal = event.target.querySelector('textarea')?.value.trim();
+      if (goal) plan(goal);
+    }
+    if (event.target.id === 'studio-drive-search-form') {
+      event.preventDefault();
+      const query = event.target.querySelector('input')?.value || '';
+      loadFiles(query);
+    }
+  });
+  document.addEventListener('change', event => {
+    const checkbox = event.target.closest?.('[data-studio-file]');
+    if (!checkbox) return;
+    const id = checkbox.dataset.studioFile;
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(id)) return;
+    if (checkbox.checked) {
+      if (state.selectedFileIds.length >= 3) {
+        state.driveMessage = 'You can select at most 3 files for each Gemini plan.';
+        checkbox.checked = false;
+      } else {
+        state.selectedFileIds = [...state.selectedFileIds, id];
+        state.driveMessage = '';
+      }
+    } else {
+      state.selectedFileIds = state.selectedFileIds.filter(selected => selected !== id);
+      state.driveMessage = '';
+    }
+    repaint();
   });
   document.addEventListener('click', async event => {
     const action = event.target.closest('[data-studio]')?.dataset.studio;
@@ -192,6 +230,8 @@
       try {
         await getJSON('/api/google/disconnect', { method: 'POST' });
         state.files = null;
+        state.selectedFileIds = [];
+        state.driveMessage = '';
         await refreshStatus();
       } catch (error) { state.files = { error: error.message }; repaint(); }
     }

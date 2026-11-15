@@ -46,18 +46,18 @@ For the complete server-backed production build, run `npm run build` and then `n
 
 Open **✧ Agent Studio** in the main browser header or sidebar. It uses Google's official `@google/genai` JavaScript SDK on the **Next.js server** to create structured multi-agent plans. The Gemini API key never goes to the browser. The six Agent Studio planning roles are **Orion** (orchestration), **Rover** (research), **Atlas** (analysis), **Aegis** (safety), **Mercury** (procurement), and **Chronicle** (knowledge/records). **These are planning personas, not six autonomous executors.**
 
-Optional Google Workspace connection requests only `openid`, `email`, `profile`, and `drive.metadata.readonly`. OAuth uses state, PKCE, encrypted HttpOnly cookies and a short-lived access token. The panel lists recent Drive file metadata, not document content. No Google data changes or paid actions are implemented.
+Optional Google Workspace connection requests only `openid`, `email`, `profile`, and `drive.metadata.readonly`. OAuth uses state, PKCE, encrypted HttpOnly cookies and a short-lived access token. The panel can search Drive filenames and lets the user explicitly select **up to three files** to enrich a Gemini mission plan. The backend re-fetches selected file metadata with the connected user's token; **no document content is read or sent to Gemini**, and no Google data changes or paid account actions are implemented.
 
 Set `GEMINI_API_KEY` and optionally `GEMINI_MODEL`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` and `GOOGLE_SESSION_SECRET` in **server-only** environment variables (see `.env.example`). Configure a Google Cloud OAuth consent screen and authorize the exact callback URL. Without secrets the interface still runs, but reports the integrations as unconfigured; no pretend live AI response is produced.
 
 | API | Purpose | Mode |
 | --- | --- | --- |
-| `POST /api/agent/studio` | Gemini-generated structured plans, flagged for approval | Local development with key; proposal-only |
+| `POST /api/agent/studio` | Gemini plans; optional `fileIds` selects 0–3 verified Drive metadata records | Local development with key; proposal-only |
 | `POST /api/ai/stream` | Gemini SSE streaming with abort and timeout | Local development with key; proposal-only |
 | `POST /api/chat` | Gemini-backed assistant replies | Local development with key |
 | `GET /api/google/status` | Integration readiness and connection status | Read-only |
 | `GET /api/google/oauth/start`, `GET /api/google/oauth/callback` | Google OAuth consent / callback | Read-only Drive scope |
-| `GET /api/google/drive` | Lists recent Drive file names and metadata | Read-only |
+| `GET /api/google/drive?q=...` | Searches recent Drive file names (0–100-character name filter); returns metadata only | Read-only |
 | `POST /api/google/disconnect` | Clears the encrypted session cookie | Explicit user action |
 
 **Phase 2 security default:** Gemini endpoints are disabled in production until verified Firebase Authentication and durable per-user quotas are implemented. Local development with a key remains available. Do not publish a Gemini key or override this restriction without production auth, budgets, and monitoring. This prototype does **not** safely execute a plan or transfer money merely because a user clicked a demo approval.
