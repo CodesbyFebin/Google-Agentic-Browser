@@ -309,11 +309,11 @@ export default function App(){
   </div>; }
 
   function CenterContent(){
-    if(activeTab==='money'||mobileView==='money') return {MoneyPanel()};
+    if(activeTab==='money'||mobileView==='money') return MoneyPanel();
     if(mobileView==='gemini') return <div className="glass rounded-3xl p-4 min-h-[520px] flex flex-col">{GeminiPanel()}</div>;
-    if(mobileView==='activity') return {ActivityPanel()};
+    if(mobileView==='activity') return ActivityPanel();
     if(mobileView==='more') return <div className="space-y-3">{ConnectPanel()}<button onClick={()=>setSheet('compliance')} className="chip w-full py-3 rounded-full text-sm min-h-[48px]">Compliance & Privacy</button></div>;
-    if(activeTab==='home') return {HomeCenter()};
+    if(activeTab==='home') return HomeCenter();
     return <div className="animate-slide space-y-4"><div className="glass rounded-3xl p-4"><div className="relative overflow-hidden rounded-2xl google-bg h-28 flex items-end p-4"><span className="relative text-white text-sm font-bold">{active.space} space · {active.domain}</span></div><h1 className="text-3xl font-black mt-4 leading-tight">{active.title}</h1><p className="text-[var(--muted)] mt-2 text-[15px]">This is a sandbox tab preview. Ask Gemini for a summary, or open Money OS for guarded checkout.</p><button onClick={()=>{setRightTab('Gemini'); askGemini('Summarize this page');}} className="google-bg text-white w-full min-h-[48px] px-4 py-3 rounded-full text-[15px] font-bold flex items-center justify-center gap-2 mt-4"><Sparkles size={18}/> Ask Gemini about this tab</button><button onClick={goMoney} className="chip w-full min-h-[48px] px-4 py-3 rounded-full text-[15px] mt-2">Open Money OS →</button></div><div className="glass rounded-3xl p-4"><div className="font-bold flex gap-2 items-center"><ShoppingBag size={20}/> Pay with guarded checkout</div><p className="text-sm text-[var(--muted)] mt-2">Mode: {autonomy} · {autonomy==='Full Autonomy'?'Will log silently':autonomy==='Supervised Autonomy'?'Low-risk auto-approves in 5s':'Will wait for approval'}</p><button onClick={()=>requestApproval(active.title,499)} className="bg-emerald-500 text-white w-full min-h-[48px] px-5 py-3 rounded-full font-bold text-[15px] mt-4">Request approval — ₹499</button></div></div>;
   }
   function RightPanel(){ return <div className="flex flex-col min-h-0">

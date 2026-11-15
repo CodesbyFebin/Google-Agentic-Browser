@@ -261,18 +261,27 @@ export default function App(){
     ['Launch mission','launch'],['Toggle Zen Mode','zen'],['Next theme','theme'],
     ['Split View — 2 panes','split'],['Open Recorder','rec'],
   ] as [string,string][];
+  // Render only serializable metadata. Execute callbacks from user events, not render-time filters.
   const paletteItems=[
-    ...commands.filter(x=>x[0].toLowerCase().includes(paletteQ.toLowerCase())).map(([title,key])=>[
-      title,()=>{switch(key){
-        case 'launch': goMission(); void run(); break;
-        case 'zen': setZen(v=>!v); toast('Zen mode toggled'); break;
-        case 'theme': {const k=Object.keys(TH); setTheme(k[(k.indexOf(theme)+1)%k.length]); toast('Theme changed'); break;}
-        case 'split': setSplit(2); toast('2 panes — split view'); break;
-        case 'rec': setRtab('rec'); toast('Recorder opened'); break;
-      }}
-    ] as [string,()=>void]),
-    ...tabs.filter(t=>t.title.toLowerCase().includes(paletteQ.toLowerCase())).map(t=>[t.title,()=>{setSpace(t.space); setActive(t.id);}] as [string,()=>void]),
+    ...commands.filter(x=>x[0].toLowerCase().includes(paletteQ.toLowerCase()))
+      .map(([title,key])=>({title,key,kind:'command' as const})),
+    ...tabs.filter(t=>t.title.toLowerCase().includes(paletteQ.toLowerCase()))
+      .map(t=>({title:t.title,key:t.id,kind:'tab' as const})),
   ];
+  function runPaletteItem(item:typeof paletteItems[number]){
+    if(item.kind==='tab'){
+      const tab=tabs.find(t=>t.id===item.key);
+      if(tab){setSpace(tab.space); setActive(tab.id);}
+      return;
+    }
+    switch(item.key){
+      case 'launch': goMission(); void run(); break;
+      case 'zen': setZen(v=>!v); toast('Zen mode toggled'); break;
+      case 'theme': {const k=Object.keys(TH); setTheme(k[(k.indexOf(theme)+1)%k.length]); toast('Theme changed'); break;}
+      case 'split': setSplit(2); toast('2 panes — split view'); break;
+      case 'rec': setRtab('rec'); toast('Recorder opened'); break;
+    }
+  }
 
   const bgStyle = dark? th.bg : '#F2F3F8';
   const panelBg = dark? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.7)';
@@ -361,6 +370,6 @@ export default function App(){
 
     {launcherOpen && <div className="fixed inset-0 z-[70] bg-black/60 p-3 sm:p-6" onClick={e=>{if(e.target===e.currentTarget)setLauncherOpen(false);}}><div className="ml-auto max-w-[360px] rounded-[24px] p-4 slide-up glass" style={{background:dark?'#151830':'white'}}><div className="grid grid-cols-3 gap-2">{APPS.map(p=><button key={p[0]} onClick={()=>{setLauncherOpen(false); openPage(p[0],p[3],p[4]);}} className="rounded-2xl p-3 hover:bg-white/10 text-center min-h-[64px]"><div className="text-2xl">{p[1]}</div><div className="text-xs mt-1">{p[0]}</div></button>)}</div><p className="text-[11px] text-white/40 mt-3">Concept demo · not affiliated with Google</p></div></div>}
 
-    {paletteOpen && <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm p-3 sm:p-6" onClick={e=>{if(e.target===e.currentTarget)setPaletteOpen(false);}}><div className="max-w-[640px] mx-auto rounded-[24px] overflow-hidden slide-up" style={{background:dark?'#151830':'white'}}><div className="flex items-center gap-2 px-4 py-4 border-b border-white/10">⌘<input autoFocus value={paletteQ} onChange={e=>setPaletteQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&paletteItems[0]){const fn=paletteItems[0][1]; setPaletteOpen(false); setPaletteQ(''); fn();}}} placeholder="Type a command, tab, or mission…" className="flex-1 bg-transparent text-lg min-w-0 min-h-[44px]"/></div><div className="max-h-[55vh] overflow-y-auto p-2">{paletteItems.map((x,i)=><button key={x[0]+i} onClick={()=>{setPaletteOpen(false); setPaletteQ(''); x[1]();}} className="w-full text-left px-3 py-3 rounded-xl hover:bg-white/10 min-h-[44px]">{x[0]}</button>)||<div className="p-4 text-white/50 text-sm">No matches.</div>}</div></div></div>}
+    {paletteOpen && <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm p-3 sm:p-6" onClick={e=>{if(e.target===e.currentTarget)setPaletteOpen(false);}}><div className="max-w-[640px] mx-auto rounded-[24px] overflow-hidden slide-up" style={{background:dark?'#151830':'white'}}><div className="flex items-center gap-2 px-4 py-4 border-b border-white/10">⌘<input autoFocus value={paletteQ} onChange={e=>setPaletteQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&paletteItems[0]){const item=paletteItems[0]; setPaletteOpen(false); setPaletteQ(''); runPaletteItem(item);}}} placeholder="Type a command, tab, or mission…" className="flex-1 bg-transparent text-lg min-w-0 min-h-[44px]"/></div><div className="max-h-[55vh] overflow-y-auto p-2">{paletteItems.map((x,i)=><button key={x.title+i} onClick={()=>{setPaletteOpen(false); setPaletteQ(''); runPaletteItem(x);}} className="w-full text-left px-3 py-3 rounded-xl hover:bg-white/10 min-h-[44px]">{x.title}</button>)||<div className="p-4 text-white/50 text-sm">No matches.</div>}</div></div></div>}
   </div>;
 }
