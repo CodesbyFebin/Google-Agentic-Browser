@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Plus, X, Pin, Lock, Command, LayoutGrid, Zap, Wallet, Shield, Users, Briefcase, Home, FlaskConical, Heart, Sparkles, Check, Ban, Bell, ChevronDown, ChevronRight, Play, Pause, Timer, MessageSquare, FileText, CreditCard, ArrowUpRight, Globe, Github, Youtube, BookOpen, Newspaper, Figma, Mail, Music, Trello, Code2, Download, RefreshCw, Eye, EyeOff, Sun, Moon, Send, Mic, MoreHorizontal, CircleDollarSign, ShoppingBag, Receipt, Repeat, AlertTriangle, Bot, SlidersHorizontal, Layers, Maximize2, Minimize2, Clock, TrendingUp, Target, CheckCircle2, Copy, Calendar, MapPin, Trash2, Activity, Settings, Star } from 'lucide-react';
 
 async function api(action:string, args:any){
@@ -108,7 +108,8 @@ export default function App(){
   const [quotaOn,setQuotaOn]=useState(true);
   const [txQ,setTxQ]=useState('');
   const [widgetOrderName,setWidgetOrderName]=useState('Gemini Order'); const [widgetOrderAmt,setWidgetOrderAmt]=useState('499');
-  const toastId=useRef(0);
+
+
   const active = tabs.find(t=>t.id===activeTab) || tabs[0];
   const fmt=(n:number)=>`₹${n.toLocaleString('en-IN')}`;
 
@@ -128,7 +129,7 @@ export default function App(){
   },[]);
   useEffect(()=>{ const h=(e:KeyboardEvent)=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault(); setPalette(v=>!v);} if(e.key==='Escape'){setPalette(false); setSheet(null);} }; window.addEventListener('keydown',h); return ()=>window.removeEventListener('keydown',h); },[]);
 
-  function toast(msg:string){ const id=++toastId.current; setToasts(t=>[...t,{id,msg}]); setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3400); }
+  function toast(msg:string){ const id=Date.now()+Math.random(); setToasts(t=>[...t,{id,msg}]); setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3400); }
   function log(msg:string){ setAudit(a=>[`${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · ${msg}`,...a].slice(0,14)); }
   function approve(a:Approval, auto=false){
     setApprovals(v=>v.filter(x=>x.id!==a.id)); setBalance(b=>b-a.amount); setSpent(s=>s+a.amount);
