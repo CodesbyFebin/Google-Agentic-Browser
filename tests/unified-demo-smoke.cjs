@@ -86,5 +86,9 @@ assert.match(vm.runInContext('GP.studio()', ctx), /Six minds\. One mission/);
 assert.match(vm.runInContext('GP.studio()', ctx), /Approval-first/);
 assert.match(vm.runInContext('GP.studio()', ctx), /Generate Gemini plan/);
 assert.equal(typeof ctx.openGoogleStudio, 'function');
+assert.equal(typeof ctx.openAgentStudio, 'function');
+assert.match(vm.runInContext('GP.studio()', ctx), /Orion|Rover|Chronicle/);
+assert.match(vm.runInContext('GP.studio()', ctx), /Stream Gemini draft/);
+assert.match(vm.runInContext('GP.studio()', ctx), /Planning templates/);
 
 console.log("PASS: supplied UI parses; demo approvals, audit, consent, navigation and Gemini Studio panel mount");

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateGemini, geminiResponseError, isGeminiConfigured } from "@/lib/gemini";
+import { isAiRuntimeAllowed } from "@/lib/ai-access";
 
 type Step = { title: string; detail: string };
 
@@ -14,6 +15,7 @@ Return ONLY a compact JSON object:
 No prose outside JSON. No markdown fences. Steps should describe future actions such as opening tabs, reading pages, taking notes, drafting, and summarizing. Make the steps specific to the goal while acknowledging that no actions have yet run.`;
 
 export async function POST(req: NextRequest) {
+  if (!isAiRuntimeAllowed()) return NextResponse.json({ error: 'Live AI is disabled on public deployments until Firebase Auth and durable quotas are enabled.' }, { status: 503 });
   try {
     const body = await req.json().catch(() => ({}));
     const prompt = (body?.prompt || "").toString().trim();

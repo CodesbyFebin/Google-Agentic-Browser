@@ -113,3 +113,27 @@ model Space {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 }
+
+
+// Phase 2 foundation only: no public approval API or external executor exists.
+// A status of EXECUTING after a crash requires manual provider reconciliation.
+model ActionApproval {
+  id                 String   @id @default(cuid())
+  ownerId            String
+  approvedById       String?
+  toolName           String
+  payloadJson        String
+  actionHash         String
+  status             String   @default("PENDING")
+  expiresAt          DateTime
+  idempotencyKey     String   @unique
+  executionStartedAt DateTime?
+  executedAt         DateTime?
+  failedAt           DateTime?
+  failureReason      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([ownerId, status])
+  @@index([expiresAt])
+}

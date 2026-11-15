@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geminiModel, isGeminiConfigured } from '@/lib/gemini';
+import { isAiRuntimeAllowed } from '@/lib/ai-access';
 import { getGoogleSession, googleOAuthConfigured } from '@/lib/google-oauth';
 
 export const runtime = 'nodejs';
@@ -7,7 +8,7 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   const session = getGoogleSession(req);
   return NextResponse.json({
-    gemini: { configured: isGeminiConfigured(), model: geminiModel() },
+    gemini: { configured: isGeminiConfigured(), available: isGeminiConfigured() && isAiRuntimeAllowed(), streamingEnabled: isGeminiConfigured() && isAiRuntimeAllowed(), model: geminiModel() },
     googleDrive: {
       configured: googleOAuthConfigured(),
       connected: Boolean(session),

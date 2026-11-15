@@ -47,4 +47,10 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
   ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills"]
 }];
 
+// Legacy Node tooling uses CommonJS; keep this narrow instead of weakening app rules.
+eslintConfig.push({
+  files: ["scripts/**/*.cjs", "tests/**/*.cjs"],
+  rules: { "@typescript-eslint/no-require-imports": "off" },
+});
+
 export default eslintConfig;
