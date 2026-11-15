@@ -1,5 +1,5 @@
 # Google Agentic Browser
-
+<img width="1672" height="941" alt="Google Agentic Browser Neon Banner" src="https://github.com/user-attachments/assets/2a82a32e-d7e7-495b-b96d-3e7c23af8d64" />
 > **An AI-first browser workspace concept that turns tabs into coordinated tasks — with people in control of every consequential action.**
 
 **Stage:** Idea-stage startup / interactive prototype · **Built for:** Startup Buildathon India 2026 · **Status:** Concept demo, not a production browser
@@ -11,6 +11,7 @@ This is an **independent, Google-inspired project by Febin Francis**. It is not 
 ## The problem
 
 Today, multi-step online work is fragmented across tabs, tools, notes, logins, and approval dialogs. AI assistants can produce answers, but users still have to coordinate each step, decide what to trust, and reconstruct what happened.
+<img width="1672" height="941" alt="Google Agentic Browser Dashboard" src="https://github.com/user-attachments/assets/8b943bdf-6ecd-47c2-b0bd-ca3b53b8a613" />
 
 ## The proposed solution
 
