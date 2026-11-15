@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible defect (do not disclose vulnerabilities here)
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: "For security vulnerabilities, use private GitHub vulnerability reporting instead of a public issue. Never paste credentials, tokens, or personal information."
+  - type: dropdown
+    id: app
+    attributes:
+      label: Application
+      options:
+        - Root browser showcase
+        - apps/ai-studio
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Observed and expected behavior
+      description: Explain what happened and what should have happened.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include commands and browser or Node version where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      description: Remove credentials, access tokens, personal data and session cookies.
+      render: text

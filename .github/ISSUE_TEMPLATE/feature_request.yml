@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a new capability
+title: "feat: "
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: Application
+      options:
+        - Root browser showcase
+        - apps/ai-studio
+        - Both
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution and alternatives
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Privacy, account access and approval considerations
+      description: Identify any requested Google Workspace writes, financial actions, or user-data handling.
