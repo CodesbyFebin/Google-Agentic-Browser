@@ -1,0 +1,10 @@
+.git
+.next
+node_modules
+.env*
+*.log
+*.zip
+*.tsbuildinfo
+.playwright-cli
+coverage
+DRAFT_firestore.rules

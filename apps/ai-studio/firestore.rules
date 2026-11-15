@@ -1,0 +1,548 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---------- Global Hardened Helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isVerifiedOwner(ownerId) {
+      return isVerified() && request.auth.uid == ownerId;
+    }
+
+    function isValidString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidToolList(tools) {
+      return tools is list && tools.size() <= 20 && (tools.size() == 0 || tools[0] is string);
+    }
+
+    // ---------- Connection Probe ----------
+    match /test/connection {
+      allow get: if isSignedIn();
+    }
+
+    // ---------- Users & Isolated PII ----------
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'defaultModel', 'defaultSplit', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'photoURL', 'defaultModel', 'defaultSplit', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.uid == request.auth.uid
+        && isValidString(data.displayName, 1, 120)
+        && (!('photoURL' in data) || isValidString(data.photoURL, 0, 512))
+        && isValidString(data.defaultModel, 1, 64)
+        && data.defaultSplit is int && data.defaultSplit >= 1 && data.defaultSplit <= 4
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow create: if isValidId(userId) && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'defaultModel', 'defaultSplit', 'updatedAt']);
+      allow delete: if false;
+
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && isVerifiedOwner(userId);
+        allow create: if isValidId(userId) && isValidId(docId) && isVerifiedOwner(userId)
+          && incoming().keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt'])
+          && incoming().keys().hasOnly(['uid', 'email', 'createdAt', 'updatedAt'])
+          && incoming().uid == userId
+          && isValidString(incoming().email, 3, 254)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) && isValidId(docId) && isVerifiedOwner(userId)
+          && incoming().keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt'])
+          && incoming().keys().hasOnly(['uid', 'email', 'createdAt', 'updatedAt'])
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && isValidString(incoming().email, 3, 254)
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']);
+        allow delete: if false;
+      }
+    }
+
+    // ---------- Workspaces ----------
+    function isValidWorkspace(data, workspaceId) {
+      return data.keys().hasAll(['id', 'ownerId', 'name', 'activeSpaceSlug', 'defaultModel', 'sidebarOpen', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'name', 'activeSpaceSlug', 'defaultModel', 'sidebarOpen', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == workspaceId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidString(data.name, 1, 80)
+        && data.activeSpaceSlug in ['work', 'money', 'personal', 'research', 'focus']
+        && isValidString(data.defaultModel, 1, 64)
+        && data.sidebarOpen is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /workspaces/{workspaceId} {
+      allow get: if isValidId(workspaceId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(workspaceId) && isVerified()
+        && isValidWorkspace(incoming(), workspaceId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(workspaceId) && isVerifiedOwner(existing().ownerId)
+        && isValidWorkspace(incoming(), workspaceId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'activeSpaceSlug', 'defaultModel', 'sidebarOpen', 'updatedAt']);
+      allow delete: if isValidId(workspaceId) && isVerifiedOwner(existing().ownerId);
+    }
+
+    // ---------- Spaces ----------
+    function isValidSpace(data, spaceId) {
+      return data.keys().hasAll(['id', 'ownerId', 'name', 'slug', 'splitLayout', 'notes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'name', 'slug', 'splitLayout', 'notes', 'activeTabId', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == spaceId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidString(data.name, 1, 60)
+        && data.slug in ['work', 'money', 'personal', 'research', 'focus']
+        && data.splitLayout is int && data.splitLayout >= 1 && data.splitLayout <= 4
+        && isValidString(data.notes, 0, 20000)
+        && (!('activeTabId' in data) || isValidString(data.activeTabId, 0, 128))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /spaces/{spaceId} {
+      allow get: if isValidId(spaceId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(spaceId) && isVerified()
+        && isValidSpace(incoming(), spaceId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(spaceId) && isVerifiedOwner(existing().ownerId)
+        && isValidSpace(incoming(), spaceId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'splitLayout', 'notes', 'activeTabId', 'updatedAt']);
+      allow delete: if isValidId(spaceId) && isVerifiedOwner(existing().ownerId);
+    }
+
+    // ---------- Tabs ----------
+    function isValidTab(data, tabId) {
+      return data.keys().hasAll(['id', 'ownerId', 'spaceId', 'title', 'url', 'kind', 'pinned', 'paneIndex', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'spaceId', 'title', 'url', 'kind', 'pinned', 'paneIndex', 'summary', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == tabId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidId(data.spaceId)
+        && isValidString(data.title, 1, 160)
+        && isValidString(data.url, 1, 2048)
+        && data.kind in ['app', 'web', 'workspace', 'note', 'report']
+        && data.pinned is bool
+        && data.paneIndex is int && data.paneIndex >= 0 && data.paneIndex <= 3
+        && (!('summary' in data) || isValidString(data.summary, 0, 8000))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /tabs/{tabId} {
+      allow get: if isValidId(tabId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(tabId) && isVerified()
+        && isValidTab(incoming(), tabId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/spaces/$(incoming().spaceId))
+        && get(/databases/$(database)/documents/spaces/$(incoming().spaceId)).data.ownerId == request.auth.uid;
+      allow update: if isValidId(tabId) && isVerifiedOwner(existing().ownerId)
+        && isValidTab(incoming(), tabId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().spaceId == existing().spaceId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'url', 'kind', 'pinned', 'paneIndex', 'summary', 'updatedAt']);
+      allow delete: if isValidId(tabId) && isVerifiedOwner(existing().ownerId);
+    }
+
+    // ---------- Conversations & Messages ----------
+    function isValidConversation(data, convId) {
+      return data.keys().hasAll(['id', 'ownerId', 'spaceId', 'title', 'model', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'spaceId', 'title', 'model', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == convId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidId(data.spaceId)
+        && isValidString(data.title, 1, 160)
+        && isValidString(data.model, 1, 64)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMessage(data, msgId) {
+      return data.keys().hasAll(['id', 'ownerId', 'role', 'content', 'createdAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'role', 'content', 'model', 'createdAt'])
+        && isValidId(data.id) && data.id == msgId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && data.role in ['user', 'model']
+        && isValidString(data.content, 1, 32000)
+        && (!('model' in data) || isValidString(data.model, 0, 64))
+        && data.createdAt is timestamp;
+    }
+
+    match /conversations/{conversationId} {
+      allow get: if isValidId(conversationId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(conversationId) && isVerified()
+        && isValidConversation(incoming(), conversationId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(conversationId) && isVerifiedOwner(existing().ownerId)
+        && isValidConversation(incoming(), conversationId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().spaceId == existing().spaceId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'model', 'updatedAt']);
+      allow delete: if isValidId(conversationId) && isVerifiedOwner(existing().ownerId);
+
+      match /messages/{messageId} {
+        allow get: if isValidId(conversationId) && isValidId(messageId)
+          && isSignedIn()
+          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.ownerId == request.auth.uid;
+        allow list: if isValidId(conversationId) && isSignedIn()
+          && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(conversationId) && isValidId(messageId) && isVerified()
+          && isValidMessage(incoming(), messageId)
+          && incoming().createdAt == request.time
+          && get(/databases/$(database)/documents/conversations/$(conversationId)).data.ownerId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- Custom Agents (Agent Studio) ----------
+    function isValidAgent(data, agentId) {
+      return data.keys().hasAll(['id', 'ownerId', 'name', 'template', 'description', 'systemInstruction', 'model', 'tools', 'requireApproval', 'maxSteps', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'name', 'template', 'description', 'systemInstruction', 'model', 'tools', 'requireApproval', 'maxSteps', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == agentId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidString(data.name, 1, 80)
+        && data.template in ['code', 'data', 'research', 'image', 'video', 'build', 'custom']
+        && isValidString(data.description, 0, 500)
+        && isValidString(data.systemInstruction, 1, 8000)
+        && isValidString(data.model, 1, 64)
+        && isValidToolList(data.tools)
+        && data.requireApproval is bool
+        && data.maxSteps is int && data.maxSteps >= 1 && data.maxSteps <= 20
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /agents/{agentId} {
+      allow get: if isValidId(agentId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(agentId) && isVerified()
+        && isValidAgent(incoming(), agentId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(agentId) && isVerifiedOwner(existing().ownerId)
+        && isValidAgent(incoming(), agentId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'template', 'description', 'systemInstruction', 'model', 'tools', 'requireApproval', 'maxSteps', 'updatedAt']);
+      allow delete: if isValidId(agentId) && isVerifiedOwner(existing().ownerId);
+    }
+
+    // ---------- Missions & Steps ----------
+    function isValidMission(data, missionId) {
+      return data.keys().hasAll(['id', 'ownerId', 'spaceId', 'title', 'objective', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'spaceId', 'title', 'objective', 'status', 'activeAgentId', 'planSummary', 'finalReport', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == missionId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidId(data.spaceId)
+        && isValidString(data.title, 1, 180)
+        && isValidString(data.objective, 1, 4000)
+        && data.status in ['CREATED', 'PLANNING', 'RUNNING', 'AWAITING_APPROVAL', 'PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED']
+        && (!('activeAgentId' in data) || isValidString(data.activeAgentId, 0, 32))
+        && (!('planSummary' in data) || isValidString(data.planSummary, 0, 4000))
+        && (!('finalReport' in data) || isValidString(data.finalReport, 0, 32000))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMissionStep(data, stepId) {
+      return data.keys().hasAll(['id', 'ownerId', 'agentId', 'title', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'agentId', 'title', 'status', 'output', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == stepId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && data.agentId in ['orion', 'rover', 'atlas', 'aegis', 'mercury', 'chronicle']
+        && isValidString(data.title, 1, 180)
+        && data.status in ['PENDING', 'RUNNING', 'AWAITING_APPROVAL', 'COMPLETED', 'REJECTED', 'FAILED']
+        && (!('output' in data) || isValidString(data.output, 0, 16000))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /missions/{missionId} {
+      allow get: if isValidId(missionId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(missionId) && isVerified()
+        && isValidMission(incoming(), missionId)
+        && incoming().status in ['CREATED', 'PLANNING']
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(missionId) && isVerifiedOwner(existing().ownerId)
+        && !(existing().status in ['COMPLETED', 'CANCELLED'])
+        && isValidMission(incoming(), missionId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().spaceId == existing().spaceId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'status', 'activeAgentId', 'planSummary', 'finalReport', 'updatedAt']);
+      allow delete: if false;
+
+      match /steps/{stepId} {
+        allow get: if isValidId(missionId) && isValidId(stepId)
+          && isSignedIn()
+          && get(/databases/$(database)/documents/missions/$(missionId)).data.ownerId == request.auth.uid;
+        allow list: if isValidId(missionId) && isSignedIn()
+          && existing().ownerId == request.auth.uid;
+        allow create: if isValidId(missionId) && isValidId(stepId) && isVerified()
+          && isValidMissionStep(incoming(), stepId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && get(/databases/$(database)/documents/missions/$(missionId)).data.ownerId == request.auth.uid;
+        allow update: if isValidId(missionId) && isValidId(stepId) && isVerifiedOwner(existing().ownerId)
+          && !(existing().status in ['COMPLETED', 'REJECTED'])
+          && isValidMissionStep(incoming(), stepId)
+          && incoming().id == existing().id
+          && incoming().ownerId == existing().ownerId
+          && incoming().agentId == existing().agentId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'output', 'updatedAt'])
+          && get(/databases/$(database)/documents/missions/$(missionId)).data.ownerId == request.auth.uid;
+        allow delete: if false;
+      }
+    }
+
+    // ---------- Approvals (Terminal State Locked) ----------
+    function isValidApproval(data, approvalId) {
+      return data.keys().hasAll(['id', 'ownerId', 'missionId', 'agentId', 'actionType', 'title', 'reason', 'targetService', 'riskLevel', 'status', 'expiresAtMs', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'missionId', 'agentId', 'actionType', 'title', 'reason', 'targetService', 'riskLevel', 'estimatedCostUsd', 'status', 'expiresAtMs', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == approvalId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidId(data.missionId)
+        && isValidString(data.agentId, 1, 64)
+        && isValidString(data.actionType, 1, 64)
+        && isValidString(data.title, 1, 180)
+        && isValidString(data.reason, 1, 1000)
+        && isValidString(data.targetService, 1, 64)
+        && data.riskLevel in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
+        && (!('estimatedCostUsd' in data) || (data.estimatedCostUsd is number && data.estimatedCostUsd >= 0 && data.estimatedCostUsd <= 100000))
+        && data.status in ['PENDING', 'APPROVED', 'REJECTED', 'EXECUTED', 'EXPIRED']
+        && data.expiresAtMs is int && data.expiresAtMs > 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /approvals/{approvalId} {
+      allow get: if isValidId(approvalId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(approvalId) && isVerified()
+        && isValidApproval(incoming(), approvalId)
+        && incoming().status == 'PENDING'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(approvalId) && isVerifiedOwner(existing().ownerId)
+        && existing().status == 'PENDING'
+        && isValidApproval(incoming(), approvalId)
+        && incoming().status in ['APPROVED', 'REJECTED', 'EXECUTED', 'EXPIRED']
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().missionId == existing().missionId
+        && incoming().actionType == existing().actionType
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // ---------- Immutable Activity Logs ----------
+    function isValidActivityLog(data, logId) {
+      return data.keys().hasAll(['id', 'ownerId', 'eventType', 'summary', 'status', 'createdAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'missionId', 'agentId', 'eventType', 'summary', 'status', 'createdAt'])
+        && isValidId(data.id) && data.id == logId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && (!('missionId' in data) || isValidString(data.missionId, 0, 128))
+        && (!('agentId' in data) || isValidString(data.agentId, 0, 64))
+        && isValidString(data.eventType, 1, 64)
+        && isValidString(data.summary, 1, 2000)
+        && isValidString(data.status, 1, 32)
+        && data.createdAt is timestamp;
+    }
+
+    match /activityLogs/{logId} {
+      allow get: if isValidId(logId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(logId) && isVerified()
+        && isValidActivityLog(incoming(), logId)
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // ---------- Chronicle Reports ----------
+    function isValidReport(data, reportId) {
+      return data.keys().hasAll(['id', 'ownerId', 'title', 'content', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'missionId', 'title', 'content', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == reportId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && (!('missionId' in data) || isValidString(data.missionId, 0, 128))
+        && isValidString(data.title, 1, 180)
+        && isValidString(data.content, 1, 50000)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /reports/{reportId} {
+      allow get: if isValidId(reportId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(reportId) && isVerified()
+        && isValidReport(incoming(), reportId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(reportId) && isVerifiedOwner(existing().ownerId)
+        && isValidReport(incoming(), reportId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'updatedAt']);
+      allow delete: if isValidId(reportId) && isVerifiedOwner(existing().ownerId);
+    }
+
+    // ---------- Workspace Connection Metadata (No Tokens) ----------
+    function isValidConnection(data, connId) {
+      return data.keys().hasAll(['id', 'ownerId', 'service', 'connected', 'scopes', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'service', 'connected', 'scopes', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == connId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && data['service'] in ['drive', 'docs', 'calendar', 'gmail']
+        && data.connected is bool
+        && isValidToolList(data.scopes)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /connections/{connectionId} {
+      allow get: if isValidId(connectionId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(connectionId) && isVerified()
+        && isValidConnection(incoming(), connectionId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(connectionId) && isVerifiedOwner(existing().ownerId)
+        && isValidConnection(incoming(), connectionId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming()['service'] == existing()['service']
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['connected', 'scopes', 'updatedAt']);
+      allow delete: if isValidId(connectionId) && isVerifiedOwner(existing().ownerId);
+    }
+
+    // ---------- Money OS Simulation Policy & Transactions ----------
+    function isValidSpendingPolicy(data, policyId) {
+      return data.keys().hasAll(['id', 'ownerId', 'monthlyBudgetUsd', 'perTxLimitUsd', 'dailyLimitUsd', 'simulatedBalanceUsd', 'realPaymentsEnabled', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'monthlyBudgetUsd', 'perTxLimitUsd', 'dailyLimitUsd', 'simulatedBalanceUsd', 'realPaymentsEnabled', 'createdAt', 'updatedAt'])
+        && isValidId(data.id) && data.id == policyId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && data.monthlyBudgetUsd is number && data.monthlyBudgetUsd >= 0 && data.monthlyBudgetUsd <= 1000000
+        && data.perTxLimitUsd is number && data.perTxLimitUsd >= 0 && data.perTxLimitUsd <= 100000
+        && data.dailyLimitUsd is number && data.dailyLimitUsd >= 0 && data.dailyLimitUsd <= 100000
+        && data.simulatedBalanceUsd is number && data.simulatedBalanceUsd >= 0 && data.simulatedBalanceUsd <= 1000000
+        && data.realPaymentsEnabled == false
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /spendingPolicies/{policyId} {
+      allow get: if isValidId(policyId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(policyId) && isVerified()
+        && isValidSpendingPolicy(incoming(), policyId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(policyId) && isVerifiedOwner(existing().ownerId)
+        && isValidSpendingPolicy(incoming(), policyId)
+        && incoming().id == existing().id
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['monthlyBudgetUsd', 'perTxLimitUsd', 'dailyLimitUsd', 'simulatedBalanceUsd', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    function isValidSimulatedTransaction(data, txId) {
+      return data.keys().hasAll(['id', 'ownerId', 'approvalId', 'merchant', 'description', 'amountUsd', 'isSimulated', 'createdAt'])
+        && data.keys().hasOnly(['id', 'ownerId', 'approvalId', 'missionId', 'merchant', 'description', 'amountUsd', 'isSimulated', 'createdAt'])
+        && isValidId(data.id) && data.id == txId
+        && isValidId(data.ownerId) && data.ownerId == request.auth.uid
+        && isValidId(data.approvalId)
+        && (!('missionId' in data) || isValidString(data.missionId, 0, 128))
+        && isValidString(data.merchant, 1, 120)
+        && isValidString(data.description, 1, 300)
+        && data.amountUsd is number && data.amountUsd > 0 && data.amountUsd <= 100000
+        && data.isSimulated == true
+        && data.createdAt is timestamp;
+    }
+
+    match /simulatedTransactions/{txId} {
+      allow get: if isValidId(txId) && isOwner(existing().ownerId);
+      allow list: if isSignedIn() && existing().ownerId == request.auth.uid;
+      allow create: if isValidId(txId) && isVerified()
+        && isValidSimulatedTransaction(incoming(), txId)
+        && incoming().createdAt == request.time
+        && exists(/databases/$(database)/documents/approvals/$(incoming().approvalId))
+        && get(/databases/$(database)/documents/approvals/$(incoming().approvalId)).data.ownerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

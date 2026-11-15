@@ -1,0 +1,333 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user workspace profile and UI preferences.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "defaultModel": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "defaultSplit": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "defaultModel", "defaultSplit", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII document for the owning user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 254 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Top-level user workspace configuration and active state.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "activeSpaceSlug": { "type": "string", "enum": ["work", "money", "personal", "research", "focus"] },
+        "defaultModel": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "sidebarOpen": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "name", "activeSpaceSlug", "defaultModel", "sidebarOpen", "createdAt", "updatedAt"]
+    },
+    "Space": {
+      "title": "Space",
+      "description": "Browser Space (Work, Money, Personal, Research, Focus) with layout and notes.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "slug": { "type": "string", "enum": ["work", "money", "personal", "research", "focus"] },
+        "splitLayout": { "type": "integer" },
+        "notes": { "type": "string", "maxLength": 20000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "name", "slug", "splitLayout", "notes", "createdAt", "updatedAt"]
+    },
+    "BrowserTab": {
+      "title": "BrowserTab",
+      "description": "Persistent tab belonging to a user Space.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "spaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "url": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "kind": { "type": "string", "enum": ["app", "web", "workspace", "note", "report"] },
+        "pinned": { "type": "boolean" },
+        "paneIndex": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "spaceId", "title", "url", "kind", "pinned", "paneIndex", "createdAt", "updatedAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Gemini AI conversation thread.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "spaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "model": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "spaceId", "title", "model", "createdAt", "updatedAt"]
+    },
+    "ConversationMessage": {
+      "title": "ConversationMessage",
+      "description": "Single message inside a Gemini conversation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string", "minLength": 1, "maxLength": 32000 },
+        "model": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "role", "content", "createdAt"]
+    },
+    "CustomAgent": {
+      "title": "CustomAgent",
+      "description": "User-configured Agent Studio agent definition.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "template": { "type": "string", "enum": ["code", "data", "research", "image", "video", "build", "custom"] },
+        "description": { "type": "string", "maxLength": 500 },
+        "systemInstruction": { "type": "string", "minLength": 1, "maxLength": 8000 },
+        "model": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "tools": { "type": "array" },
+        "requireApproval": { "type": "boolean" },
+        "maxSteps": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "name", "template", "description", "systemInstruction", "model", "tools", "requireApproval", "maxSteps", "createdAt", "updatedAt"]
+    },
+    "Mission": {
+      "title": "Mission",
+      "description": "Multi-agent mission orchestration record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "spaceId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "objective": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "status": { "type": "string", "enum": ["CREATED", "PLANNING", "RUNNING", "AWAITING_APPROVAL", "PAUSED", "COMPLETED", "FAILED", "CANCELLED"] },
+        "activeAgentId": { "type": "string", "maxLength": 32 },
+        "planSummary": { "type": "string", "maxLength": 4000 },
+        "finalReport": { "type": "string", "maxLength": 32000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "spaceId", "title", "objective", "status", "createdAt", "updatedAt"]
+    },
+    "MissionStep": {
+      "title": "MissionStep",
+      "description": "Execution step within a Mission.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "agentId": { "type": "string", "enum": ["orion", "rover", "atlas", "aegis", "mercury", "chronicle"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "status": { "type": "string", "enum": ["PENDING", "RUNNING", "AWAITING_APPROVAL", "COMPLETED", "REJECTED", "FAILED"] },
+        "output": { "type": "string", "maxLength": 16000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "agentId", "title", "status", "createdAt", "updatedAt"]
+    },
+    "ApprovalRequest": {
+      "title": "ApprovalRequest",
+      "description": "Human-in-the-loop approval record for consequential actions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "missionId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "agentId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "actionType": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "targetService": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "riskLevel": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "estimatedCostUsd": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED", "EXECUTED", "EXPIRED"] },
+        "expiresAtMs": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "missionId", "agentId", "actionType", "title", "reason", "targetService", "riskLevel", "status", "expiresAtMs", "createdAt", "updatedAt"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Immutable audit event for mission replay and compliance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "missionId": { "type": "string", "maxLength": 128 },
+        "agentId": { "type": "string", "maxLength": 64 },
+        "eventType": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "status": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "eventType", "summary", "status", "createdAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Saved report generated by Chronicle or Atlas.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "missionId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "content": { "type": "string", "minLength": 1, "maxLength": 50000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "title", "content", "createdAt", "updatedAt"]
+    },
+    "WorkspaceConnection": {
+      "title": "WorkspaceConnection",
+      "description": "Connection status metadata for Google Workspace services (never stores tokens).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "service": { "type": "string", "enum": ["drive", "docs", "calendar", "gmail"] },
+        "connected": { "type": "boolean" },
+        "scopes": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "service", "connected", "scopes", "createdAt", "updatedAt"]
+    },
+    "SpendingPolicy": {
+      "title": "SpendingPolicy",
+      "description": "Money OS simulation budget and spending limit policy.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "monthlyBudgetUsd": { "type": "number" },
+        "perTxLimitUsd": { "type": "number" },
+        "dailyLimitUsd": { "type": "number" },
+        "simulatedBalanceUsd": { "type": "number" },
+        "realPaymentsEnabled": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "monthlyBudgetUsd", "perTxLimitUsd", "dailyLimitUsd", "simulatedBalanceUsd", "realPaymentsEnabled", "createdAt", "updatedAt"]
+    },
+    "SimulatedTransaction": {
+      "title": "SimulatedTransaction",
+      "description": "Immutable Money OS simulated transaction receipt (never real financial settlement).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "approvalId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "missionId": { "type": "string", "maxLength": 128 },
+        "merchant": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "amountUsd": { "type": "number" },
+        "isSimulated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "ownerId", "approvalId", "merchant", "description", "amountUsd", "isSimulated", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only user profile and workspace defaults."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Owner-only isolated PII document."
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/Workspace" },
+      "description": "Owner-only top-level browser workspace state."
+    },
+    "/spaces/{spaceId}": {
+      "schema": { "$ref": "#/entities/Space" },
+      "description": "User-owned browser spaces."
+    },
+    "/tabs/{tabId}": {
+      "schema": { "$ref": "#/entities/BrowserTab" },
+      "description": "User-owned persistent tabs inside spaces."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "User-owned Gemini chat threads."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ConversationMessage" },
+      "description": "Messages inside a user-owned conversation."
+    },
+    "/agents/{agentId}": {
+      "schema": { "$ref": "#/entities/CustomAgent" },
+      "description": "Custom Agent Studio configurations."
+    },
+    "/missions/{missionId}": {
+      "schema": { "$ref": "#/entities/Mission" },
+      "description": "User-owned multi-agent missions."
+    },
+    "/missions/{missionId}/steps/{stepId}": {
+      "schema": { "$ref": "#/entities/MissionStep" },
+      "description": "Execution steps belonging to a mission."
+    },
+    "/approvals/{approvalId}": {
+      "schema": { "$ref": "#/entities/ApprovalRequest" },
+      "description": "Human-in-the-loop approval checkpoints."
+    },
+    "/activityLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Immutable audit trail events."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Saved Chronicle reports."
+    },
+    "/connections/{connectionId}": {
+      "schema": { "$ref": "#/entities/WorkspaceConnection" },
+      "description": "Google Workspace connection status metadata (no tokens)."
+    },
+    "/spendingPolicies/{policyId}": {
+      "schema": { "$ref": "#/entities/SpendingPolicy" },
+      "description": "Money OS simulation spending policy."
+    },
+    "/simulatedTransactions/{txId}": {
+      "schema": { "$ref": "#/entities/SimulatedTransaction" },
+      "description": "Immutable simulated purchase records."
+    }
+  }
+}
