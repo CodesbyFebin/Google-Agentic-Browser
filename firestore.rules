@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All stored notes belong to one verified Firebase user. No other
+    // collections are accessible via client SDKs.
+    match /users/{userId}/notes/{noteId} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow read: if isOwner();
+      allow create: if isOwner()
+        && request.resource.data.keys().hasOnly(['ownerUid', 'text', 'createdAt'])
+        && request.resource.data.keys().hasAll(['ownerUid', 'text', 'createdAt'])
+        && request.resource.data.ownerUid == userId
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if isOwner() && resource.data.ownerUid == userId;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
