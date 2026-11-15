@@ -2,7 +2,7 @@
 import 'server-only';
 import { ApiError, GoogleGenAI } from '@google/genai';
 
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3.8-flash';
 
 export class GeminiError extends Error {
   constructor(message: string, public readonly status = 502) {

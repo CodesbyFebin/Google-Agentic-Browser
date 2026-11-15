@@ -4,7 +4,7 @@
 
 > **From browsing pages to completing goals — with Gemini-powered plans and a human in control.**
 
-**Stage:** Idea-stage startup · **Buildathon:** Startup Buildathon India 2026 · **Technology:** Next.js, TypeScript, Google Gemini SDK, Google OAuth
+**Stage:** Idea-stage startup · **Buildathon:** Startup Buildathon India 2026 · **Technology:** Next.js, TypeScript, Google Gemini SDK, Firebase Authentication, Firestore, Google OAuth
 
 Google Agentic Browser is an independent Google-inspired browser workspace prototype by Febin Francis. It combines six agent personas, spaces and tabs, split views, simulated approval checkpoints, activity replay, a Money OS concept, live Gemini planning, and an optional read-only Google Drive connection. It is **not an official Google product or a replacement browser engine**.
 
@@ -48,7 +48,13 @@ Open **✧ Agent Studio** in the main browser header or sidebar. It uses Google'
 
 Optional Google Workspace connection requests only `openid`, `email`, `profile`, and `drive.metadata.readonly`. OAuth uses state, PKCE, encrypted HttpOnly cookies and a short-lived access token. The panel can search Drive filenames and lets the user explicitly select **up to three files** to enrich a Gemini mission plan. The backend re-fetches selected file metadata with the connected user's token; **no document content is read or sent to Gemini**, and no Google data changes or paid account actions are implemented.
 
-Set `GEMINI_API_KEY` and optionally `GEMINI_MODEL`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` and `GOOGLE_SESSION_SECRET` in **server-only** environment variables (see `.env.example`). Configure a Google Cloud OAuth consent screen and authorize the exact callback URL. Without secrets the interface still runs, but reports the integrations as unconfigured; no pretend live AI response is produced.
+Set `GEMINI_API_KEY` and optionally `GEMINI_MODEL`, `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` and `GOOGLE_SESSION_SECRET` in **server-only** environment variables (see `.env.example`). The recommended default model is now **`gemini-3.8-flash`**; `gemini-3.5-flash-lite` is a lower-cost alternative. Configure a Google Cloud OAuth consent screen and authorize the exact callback URL. Without secrets the interface still runs, but reports the integrations as unconfigured; no pretend live AI response is produced.
+
+### Firebase Authentication + private Firestore notes
+
+The existing Agent Studio UI now includes an optional **Google sign-in / private notes** panel. It uses the official Firebase modular browser SDK, loaded from a versioned Google CDN after Firebase web configuration is present. Firebase Authentication signs users in with an explicit popup; the server independently validates ID tokens through Google Identity Toolkit. Firestore stores notes at `users/{firebaseUid}/notes/{noteId}` under owner-only [security rules](firestore.rules).
+
+Add the `NEXT_PUBLIC_FIREBASE_*` web-app settings to your **gitignored** `.env.local`; see the [Firebase setup guide](docs/FIREBASE_SETUP.md) for the Firebase console steps and required Firestore rules deployment. These are public project identifiers, not Admin service-account credentials. The Google Drive OAuth connection remains separate and read-only.
 
 | API | Purpose | Mode |
 | --- | --- | --- |
@@ -59,8 +65,10 @@ Set `GEMINI_API_KEY` and optionally `GEMINI_MODEL`, `GOOGLE_OAUTH_CLIENT_ID`, `G
 | `GET /api/google/oauth/start`, `GET /api/google/oauth/callback` | Google OAuth consent / callback | Read-only Drive scope |
 | `GET /api/google/drive?q=...` | Searches recent Drive file names (0–100-character name filter); returns metadata only | Read-only |
 | `POST /api/google/disconnect` | Clears the encrypted session cookie | Explicit user action |
+| `GET /api/firebase/config` | Exposes only public Firebase web app configuration | Read-only |
+| `GET /api/firebase/session` | Verifies a browser Firebase ID token with Google Identity Toolkit | Requires bearer token |
 
-**Phase 2 security default:** Gemini endpoints are disabled in production until verified Firebase Authentication and durable per-user quotas are implemented. Local development with a key remains available. Do not publish a Gemini key or override this restriction without production auth, budgets, and monitoring. This prototype does **not** safely execute a plan or transfer money merely because a user clicked a demo approval.
+**Security default:** Gemini endpoints remain disabled in production until server-authenticated identity is wired through every AI route **and** durable per-user quotas are implemented. Adding Firebase sign-in and private notes does **not** lift the production AI safeguard. Local development with a key remains available. Do not publish a Gemini key or override this restriction without production auth, budgets, and monitoring. This prototype does **not** safely execute a plan or transfer money merely because a user clicked a demo approval.
 
 The main UI is served from `public/google-agentic-browser.html` with the demo extension (`public/unified-features.js` / `.css`) and the live integration panel (`public/google-studio.js` / `.css`). The original design, tokens, typography and color themes are preserved.
 
@@ -99,4 +107,4 @@ See [docs/INTEGRATION.md](docs/INTEGRATION.md) for source mapping and operationa
 - A conservative HTTPS-only DNS-pinned fetch helper is included but **not exposed or enabled**. IPv6 and redirects are rejected; private/reserved IPv4 destinations are blocked.
 - CI runs lint, typecheck, smoke tests, approval/tool policy tests and a production build. See [Phase 2 engineering notes](docs/PHASE2.md).
 
-**Not yet implemented:** Firebase Auth, Firestore, durable per-user rate limits, external action execution, Google Workspace writes, live browser automation, or payments. The legacy alternate demo editions may retain their original persona labels and simulated behavior; the new Agent Studio API/UI uses Orion through Chronicle.
+**Not yet implemented:** durable per-user AI rate limits, production AI authentication on all routes, external action execution, Google Workspace writes, live browser automation, or payments. Firebase Google sign-in and Firestore notes require project configuration and security-rule deployment before live use. The legacy alternate demo editions may retain their original persona labels and simulated behavior; the new Agent Studio API/UI uses Orion through Chronicle.

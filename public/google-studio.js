@@ -21,7 +21,8 @@
     Custom: '',
   };
   const state = { status: null, plan: null, files: null, error: '', busy: false, fetchingDrive: false, goal: '', streamText: '', streaming: false, streamError: '', streamAbort: null,
-    driveQuery: '', selectedFileIds: [], driveMessage: '' };
+    driveQuery: '', selectedFileIds: [], driveMessage: '',
+    firebase: { loading: true, configured: false, connected: false, verified: false, busy: false, notes: [], error: '', status: 'Preparing Firebase…' } };
   const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[c]);
@@ -58,6 +59,22 @@
       ${state.driveMessage ? `<p role="status" class="studio-muted" style="color:#ffc98c">${html(state.driveMessage)}</p>` : ''}
       ${fileList?.error ? `<p role="alert" class="studio-muted" style="color:#ffc98c;margin-top:8px">${html(fileList.error)}</p>` : ''}
       ${Array.isArray(fileList?.files) ? fileList.files.map(f => `<div class="studio-drive-file"><label class="studio-drive-choice"><input type="checkbox" data-studio-file="${html(f.id)}" aria-label="Use metadata from ${html(f.name)}" ${state.selectedFileIds.includes(f.id) ? 'checked' : ''}><span><b>▤ ${html(f.name)}</b><small>${html(f.mimeType)}${f.modifiedTime ? ` · ${html(f.modifiedTime.slice(0, 10))}` : ''}</small></span></label>${typeof f.url === 'string' && /^https:\/\/(?:drive|docs|sheets|slides)\.google\.com\//.test(f.url) ? `<a href="${html(f.url)}" target="_blank" rel="noopener noreferrer">Open in Google Workspace ↗</a>` : ''}</div>`).join('') || '<p class="studio-muted">No matching files returned.</p>' : ''}`;
+  }
+
+  function renderFirebase() {
+    const f = state.firebase;
+    if (f.loading) return '<p class="studio-muted">Loading Firebase workspace…</p>';
+    if (!f.configured) return '<p class="studio-muted">Firebase Authentication and Firestore are optional. Add your Firebase web configuration to <code>.env.local</code>, then enable Google sign-in and deploy <code>firestore.rules</code>.</p>';
+    const error = f.error ? `<p class="studio-muted" style="color:#ffc98c;margin-top:8px" role="alert">${html(f.error)}</p>` : '';
+    if (!f.connected) return `<p class="studio-muted">Sign in with Google to save private notes in your own Firestore workspace. This grants no Drive, Gmail, payment, or account-management permissions.</p>
+      <button type="button" data-studio="firebase-login" class="studio-button primary" style="margin-top:10px" ${f.busy ? 'disabled' : ''}>Sign in with Google ↗</button>${error}`;
+    return `<p class="studio-muted">Signed in as <b>${html(f.email || 'Google user')}</b> · ${f.verified ? 'Server verified' : 'Verifying session…'}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0"><span class="studio-pill">${f.verified ? '🔒 Private Firestore notes' : '⏳ Verification required'}</span><button type="button" data-studio="firebase-logout" class="studio-button" ${f.busy ? 'disabled' : ''}>Sign out</button></div>
+      <form id="studio-firestore-note-form"><label for="studio-firestore-note" class="studio-label">New private note</label>
+        <textarea id="studio-firestore-note" class="studio-textarea studio-note-input" maxlength="2000" required placeholder="Save research notes to your Firestore workspace…" ${f.busy || !f.verified ? 'disabled' : ''}></textarea>
+        <button type="submit" class="studio-button primary" style="margin-top:8px" ${f.busy || !f.verified ? 'disabled' : ''}>Save note ↗</button></form>
+      ${error}<p class="studio-muted" style="margin-top:12px">Your latest ${f.notes.length} note(s) · stored under your Firebase user ID</p>
+      ${f.notes.map(n => `<div class="studio-note"><p>${html(n.text)}</p><div><small>${html(n.createdAt ? n.createdAt.slice(0, 10) : 'Syncing…')}</small><button type="button" class="studio-note-remove" data-studio="firebase-delete" data-note-id="${html(n.id)}" ${f.busy || !f.verified ? 'disabled' : ''}>Delete</button></div></div>`).join('')}`;
   }
 
 
@@ -126,7 +143,7 @@
   function renderStudio() {
     return `<div class="studio-wrap"><div class="studio-hero"><div class="studio-eyebrow"><span class="studio-spark">✦</span> GOOGLE AGENTIC BROWSER / AGENT STUDIO</div><h1>Six minds. One mission.<br><span style="color:#9dc0ff">Your final say.</span></h1><p>Draft multi-agent workflows with the real Google Gemini API. Connect Google Drive for read-only metadata. Purchases, messages, publishing and account changes are never executed by these agents.</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${statusPill(Boolean(state.status?.gemini?.available), state.status?.gemini?.available ? `Gemini available · ${state.status.gemini.model}` : state.status?.gemini?.configured ? 'Gemini paused until authentication' : 'Gemini key not configured')}${statusPill(Boolean(state.status?.googleDrive?.connected), state.status?.googleDrive?.connected ? 'Google Drive connected' : 'Google Drive disconnected')}<span class="studio-pill">🔒 Approval-first · planning only</span></div></div>
     <div class="studio-grid"><div style="min-width:0"><div class="studio-card"><div class="studio-label">Mission composer · Agent Studio</div><p class="studio-muted" style="margin:8px 0 12px">For example: “Compare three browser agent frameworks and propose a test plan.”</p><div class="studio-templates"><span class="studio-muted">Planning templates:</span>${Object.keys(templates).map(name => `<button type="button" class="studio-template" data-studio-template="${html(name)}">${html(name)}</button>`).join('')}</div><form id="studio-goal-form"><textarea class="studio-textarea" id="studio-goal" maxlength="4000" minlength="1" required placeholder="What would you like your agents to plan?">${html(state.goal)}</textarea><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px"><span class="studio-muted">Plans only · zero automated external actions</span><button class="studio-button primary" type="submit" ${state.busy ? 'disabled' : ''}>${state.busy ? 'Planning…' : '✧ Generate Gemini plan →'}</button></div></form></div><div class="studio-card" style="margin-top:13px"><div class="studio-label">Proposed workflow</div>${renderPlan()}</div><div class="studio-card" style="margin-top:13px"><div class="studio-label">Live Gemini draft · local development</div>${renderStream()}</div></div>
-    <div style="min-width:0"><div class="studio-card"><div class="studio-label">Agent team</div><div class="studio-agent-grid">${personas.map(a => `<div class="studio-agent"><div class="studio-agent-icon">${a[1]}</div><div><b>${a[2]}</b><small>${a[3]}</small></div></div>`).join('')}</div><p class="studio-muted" style="margin-top:13px">Personas collaborate through Gemini-generated steps, not independent background agents with account access.</p></div><div class="studio-card" style="margin-top:13px"><div class="studio-label">Google Workspace connector</div><h2 style="font-size:19px;margin-top:9px">Drive, on your terms.</h2><div style="margin-top:10px">${renderDrive()}</div></div><div class="studio-card" style="margin-top:13px;background:rgba(66,133,244,.075)"><div class="studio-label">Safety boundary</div><p class="studio-muted" style="margin-top:8px">Nothing spends funds or alters your Google account. Higher-risk plan steps are flagged for approval, but an approval-execution backend is intentionally not enabled.</p></div></div></div></div>`;
+    <div style="min-width:0"><div class="studio-card"><div class="studio-label">Agent team</div><div class="studio-agent-grid">${personas.map(a => `<div class="studio-agent"><div class="studio-agent-icon">${a[1]}</div><div><b>${a[2]}</b><small>${a[3]}</small></div></div>`).join('')}</div><p class="studio-muted" style="margin-top:13px">Personas collaborate through Gemini-generated steps, not independent background agents with account access.</p></div><div class="studio-card" style="margin-top:13px"><div class="studio-label">Firebase workspace · Google sign-in</div><h2 style="font-size:19px;margin-top:9px">Your notes. Your account.</h2><div style="margin-top:10px">${renderFirebase()}</div></div><div class="studio-card" style="margin-top:13px"><div class="studio-label">Google Workspace connector</div><h2 style="font-size:19px;margin-top:9px">Drive, on your terms.</h2><div style="margin-top:10px">${renderDrive()}</div></div><div class="studio-card" style="margin-top:13px;background:rgba(66,133,244,.075)"><div class="studio-label">Safety boundary</div><p class="studio-muted" style="margin-top:8px">Nothing spends funds or alters your Google account. Higher-risk plan steps are flagged for approval, but an approval-execution backend is intentionally not enabled.</p></div></div></div></div>`;
   }
 
   async function getJSON(url, init) {
@@ -201,6 +218,11 @@
       const query = event.target.querySelector('input')?.value || '';
       loadFiles(query);
     }
+    if (event.target.id === 'studio-firestore-note-form') {
+      event.preventDefault();
+      const text = event.target.querySelector('textarea')?.value.trim() || '';
+      if (text) void window.gabFirebaseWorkspace?.addNote(text);
+    }
   });
   document.addEventListener('change', event => {
     const checkbox = event.target.closest?.('[data-studio-file]');
@@ -226,6 +248,14 @@
     if (action === 'stream') await streamDraft();
     if (action === 'cancel-stream') state.streamAbort?.abort();
     if (action === 'files') await loadFiles();
+    if (action === 'firebase-login') await window.gabFirebaseWorkspace?.signIn();
+    if (action === 'firebase-logout') await window.gabFirebaseWorkspace?.signOut();
+    if (action === 'firebase-delete') {
+      const id = event.target.closest('[data-note-id]')?.dataset.noteId;
+      if (id && window.confirm('Delete this private note from Firestore?')) {
+        await window.gabFirebaseWorkspace?.deleteNote(id);
+      }
+    }
     if (action === 'disconnect') {
       try {
         await getJSON('/api/google/disconnect', { method: 'POST' });
@@ -246,5 +276,20 @@
     document.getElementById('studio-goal')?.focus();
   });
   window.addEventListener('pagehide', () => state.streamAbort?.abort());
+  window.addEventListener('gab-firebase-update', event => {
+    state.firebase = event.detail;
+    repaint();
+  });
+  if (document.head) {
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = '/firebase-workspace.js';
+    script.onerror = () => {
+      state.firebase = { ...state.firebase, loading: false,
+        error: 'Could not load Firebase workspace code.', configured: false };
+      repaint();
+    };
+    document.head.appendChild(script);
+  }
   refreshStatus();
 })();

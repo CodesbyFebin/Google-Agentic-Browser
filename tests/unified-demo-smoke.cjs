@@ -8,6 +8,7 @@ const publicDir = path.resolve(__dirname, "../public");
 const html = fs.readFileSync(path.join(publicDir, "google-agentic-browser.html"), "utf8");
 const extension = fs.readFileSync(path.join(publicDir, "unified-features.js"), "utf8");
 const studio = fs.readFileSync(path.join(publicDir, "google-studio.js"), "utf8");
+const firebaseWorkspace = fs.readFileSync(path.join(publicDir, "firebase-workspace.js"), "utf8");
 assert.match(html, /unified-features\.js/);
 assert.match(html, /unified-features\.css/);
 assert.match(html, /google-studio\.js/);
@@ -18,6 +19,7 @@ assert.ok(inline, "supplied UI script is present");
 new vm.Script(inline, { filename: "user-ui-inline.js" });
 new vm.Script(extension, { filename: "unified-features.js" });
 new vm.Script(studio, { filename: "google-studio.js" });
+new vm.Script(firebaseWorkspace, { filename: "firebase-workspace.js" });
 
 const el = () => ({
   innerHTML: "", value: "", style: { setProperty() {} }, classList: { add() {} },
@@ -92,6 +94,10 @@ assert.match(vm.runInContext('GP.studio()', ctx), /Stream Gemini draft/);
 assert.match(vm.runInContext('GP.studio()', ctx), /Planning templates/);
 assert.match(studio, /fileIds: state\.selectedFileIds/);
 assert.match(studio, /data-studio-file/);
+assert.match(studio, /Firebase workspace/);
+assert.match(studio, /firebase-login/);
+assert.match(firebaseWorkspace, /onIdTokenChanged/);
+assert.match(firebaseWorkspace, /users.*notes/);
 
 // The account-dependent controls render after the asynchronous status lookup.
 setImmediate(() => {
