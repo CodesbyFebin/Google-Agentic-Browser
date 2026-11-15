@@ -14,7 +14,8 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "test:phase2": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/phase2-guards.test.mjs",
-    "test": "npm run test:smoke && npm run test:phase2"
+    "test:drive": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/google-drive-metadata.test.mjs",
+    "test": "npm run test:smoke && npm run test:phase2 && npm run test:drive"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

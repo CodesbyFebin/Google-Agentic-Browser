@@ -78,7 +78,7 @@ ctx.fetch = async url => ({
   ok: true,
   json: async () => url.includes('/status') ? {
     gemini: { configured: false, model: 'gemini-2.5-flash' },
-    googleDrive: { configured: false, connected: false },
+    googleDrive: { configured: true, connected: true, email: 'demo@example.com' },
   } : {},
 });
 vm.runInContext(studio, ctx);
@@ -90,5 +90,15 @@ assert.equal(typeof ctx.openAgentStudio, 'function');
 assert.match(vm.runInContext('GP.studio()', ctx), /Orion|Rover|Chronicle/);
 assert.match(vm.runInContext('GP.studio()', ctx), /Stream Gemini draft/);
 assert.match(vm.runInContext('GP.studio()', ctx), /Planning templates/);
+assert.match(studio, /fileIds: state\.selectedFileIds/);
+assert.match(studio, /data-studio-file/);
+
+// The account-dependent controls render after the asynchronous status lookup.
+setImmediate(() => {
+  const rendered = vm.runInContext('GP.studio()', ctx);
+  assert.match(rendered, /Find Drive files by name/);
+  assert.match(rendered, /Select up to 3 files/);
+  assert.match(rendered, /metadata only/);
+});
 
 console.log("PASS: supplied UI parses; demo approvals, audit, consent, navigation and Gemini Studio panel mount");
