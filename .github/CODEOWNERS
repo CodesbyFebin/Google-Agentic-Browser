@@ -1,0 +1,4 @@
+# Default maintainer for application, security and workflow changes.
+* @CodesbyFebin
+/.github/ @CodesbyFebin
+/apps/ai-studio/ @CodesbyFebin
