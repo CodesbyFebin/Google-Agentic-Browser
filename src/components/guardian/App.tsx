@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Search, Plus, X, Pin, Lock, Command, LayoutGrid, Zap, Wallet, Shield, Users, Briefcase, Home, FlaskConical, Heart, Sparkles, Check, Ban, Bell, ChevronDown, ChevronRight, Play, Pause, Timer, MessageSquare, FileText, CreditCard, ArrowUpRight, Globe, Github, Youtube, BookOpen, Newspaper, Figma, Mail, Music, Trello, Code2, Download, RefreshCw, Eye, EyeOff, Sun, Moon, Send, Mic, MoreHorizontal, CircleDollarSign, ShoppingBag, Receipt, Repeat, AlertTriangle, Bot, SlidersHorizontal, Layers, Maximize2, Minimize2, Clock, TrendingUp, Target, CheckCircle2, Copy, Calendar, MapPin, Trash2, Activity, Settings, Star } from 'lucide-react';
 
 async function api(action:string, args:any){
@@ -108,7 +108,8 @@ export default function App(){
   const [quotaOn,setQuotaOn]=useState(true);
   const [txQ,setTxQ]=useState('');
   const [widgetOrderName,setWidgetOrderName]=useState('Gemini Order'); const [widgetOrderAmt,setWidgetOrderAmt]=useState('499');
-  const toastId=useRef(0);
+
+
   const active = tabs.find(t=>t.id===activeTab) || tabs[0];
   const fmt=(n:number)=>`₹${n.toLocaleString('en-IN')}`;
 
@@ -128,7 +129,7 @@ export default function App(){
   },[]);
   useEffect(()=>{ const h=(e:KeyboardEvent)=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault(); setPalette(v=>!v);} if(e.key==='Escape'){setPalette(false); setSheet(null);} }; window.addEventListener('keydown',h); return ()=>window.removeEventListener('keydown',h); },[]);
 
-  function toast(msg:string){ const id=++toastId.current; setToasts(t=>[...t,{id,msg}]); setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3400); }
+  function toast(msg:string){ const id=Date.now()+Math.random(); setToasts(t=>[...t,{id,msg}]); setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3400); }
   function log(msg:string){ setAudit(a=>[`${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · ${msg}`,...a].slice(0,14)); }
   function approve(a:Approval, auto=false){
     setApprovals(v=>v.filter(x=>x.id!==a.id)); setBalance(b=>b-a.amount); setSpent(s=>s+a.amount);
@@ -318,7 +319,7 @@ export default function App(){
   }
   function RightPanel(){ return <div className="flex flex-col min-h-0">
     <div className="flex gap-1 bg-white/5 rounded-full p-1">{(['Gemini','Features','Wallet','Connect'] as const).map(t=><button key={t} onClick={()=>setRightTab(t)} className={`flex-1 px-2 py-3 rounded-full text-[13px] font-bold min-h-[48px] ${rightTab===t?'bg-white text-black':'text-white/70'}`}>{t}</button>)}</div>
-    <div className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">{rightTab==='Gemini'&&{GeminiPanel()}}{rightTab==='Features'&&<>{ActivityPanel()}<div className="mt-4">{ConnectPanel()}</div></>}{rightTab==='Wallet'&&{MoneyPanel()}}{rightTab==='Connect'&&{ConnectPanel()}}</div>
+    <div className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">{rightTab==='Gemini'&&GeminiPanel()}{rightTab==='Features'&&<>{ActivityPanel()}<div className="mt-4">{ConnectPanel()}</div></>}{rightTab==='Wallet'&&MoneyPanel()}{rightTab==='Connect'&&ConnectPanel()}</div>
   </div>; }
 
   const sheetTitle = sheet==='gemini'?'Gemini':sheet==='activity'?'Activity':sheet==='more'?'More':sheet==='compliance'?'Privacy & Compliance':sheet==='consent'?'Consent — gmail.modify':sheet==='erase'?'Erase My Data':'';
@@ -364,7 +365,7 @@ export default function App(){
       <div className="pt-2 pb-1 flex justify-center"><span className="w-12 h-1.5 rounded-full bg-white/25"/></div>
       <div className="flex items-center justify-between px-4 pb-2"><div><h3 className="font-black text-lg leading-tight">{sheetTitle}</h3><p className="text-xs text-white/50">{sheet==='more'?'Browser controls':sheet==='compliance'?'Demo / sandbox — no real Google login':'Review before you continue'}</p></div><button aria-label="Close sheet" onClick={()=>setSheet(null)} className="w-11 h-11 flex items-center justify-center"><X size={20}/></button></div>
       <div className="px-4 pb-5 overflow-y-auto flex-1 flex flex-col min-h-0">
-        {sheet==='gemini'&&{GeminiPanel()}}{sheet==='activity'&&{ActivityPanel()}}
+        {sheet==='gemini'&&GeminiPanel()}{sheet==='activity'&&ActivityPanel()}
         {sheet==='more'&&<div className="space-y-3">{ConnectPanel()}<button onClick={()=>setSheet('compliance')} className="chip w-full py-3 rounded-full text-sm min-h-[48px]">Compliance & Privacy</button><button onClick={()=>setSheet('erase')} className="bg-red-500 text-white w-full py-3 rounded-full text-sm font-bold min-h-[48px]">Erase My Data</button></div>}
         {sheet==='compliance'&&<div className="space-y-4"><div className="rounded-2xl border border-amber-400/30 bg-amber-500/10 p-4"><b className="text-[15px]">Third-party concept prototype - not an official Google product</b><p className="text-sm text-white/70 mt-1">No real Google login. No real data access. All content is demo / sandbox data.</p></div>
           <button onClick={()=>{setMinimize(v=>!v); toast(`Data Minimization ${!minimize?'on':'off'} — Bounded Context`);}} className="w-full flex justify-between items-center bg-white/[.03] border border-white/10 rounded-2xl px-4 py-3 min-h-[52px] text-[15px]"><span>Data Minimization <span className="block text-xs opacity-60">Bounded Context — only data needed for the task</span></span><span className={`w-12 h-7 rounded-full p-0.5 flex shrink-0 ${minimize?'justify-end bg-emerald-500':'bg-white/20'}`}><span className="w-6 h-6 bg-white rounded-full"/></span></button>

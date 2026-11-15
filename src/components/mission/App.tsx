@@ -257,17 +257,6 @@ export default function App(){
     const i0=Math.max(0,sp.findIndex(t=>t.id===act.id)); const out:Tab[]=[]; for(let i=0;i<split;i++) out.push(sp[(i0+i)%sp.length]); return out;
   },[tabs,active,space,split]);
 
-  const commands=[
-    ['Launch mission','launch'],['Toggle Zen Mode','zen'],['Next theme','theme'],
-    ['Split View — 2 panes','split'],['Open Recorder','rec'],
-  ] as [string,string][];
-  // Render only serializable metadata. Execute callbacks from user events, not render-time filters.
-  const paletteItems=[
-    ...commands.filter(x=>x[0].toLowerCase().includes(paletteQ.toLowerCase()))
-      .map(([title,key])=>({title,key,kind:'command' as const})),
-    ...tabs.filter(t=>t.title.toLowerCase().includes(paletteQ.toLowerCase()))
-      .map(t=>({title:t.title,key:t.id,kind:'tab' as const})),
-  ];
   function runPaletteItem(item:typeof paletteItems[number]){
     if(item.kind==='tab'){
       const tab=tabs.find(t=>t.id===item.key);
@@ -282,6 +271,18 @@ export default function App(){
       case 'rec': setRtab('rec'); toast('Recorder opened'); break;
     }
   }
+
+  const commands=[
+    ['Launch mission','launch'],['Toggle Zen Mode','zen'],['Next theme','theme'],
+    ['Split View — 2 panes','split'],['Open Recorder','rec'],
+  ] as [string,string][];
+  // Render only serializable metadata. Execute callbacks from user events, not render-time filters.
+  const paletteItems=[
+    ...commands.filter(x=>x[0].toLowerCase().includes(paletteQ.toLowerCase()))
+      .map(([title,key])=>({title,key,kind:'command' as const})),
+    ...tabs.filter(t=>t.title.toLowerCase().includes(paletteQ.toLowerCase()))
+      .map(t=>({title:t.title,key:t.id,kind:'tab' as const})),
+  ];
 
   const bgStyle = dark? th.bg : '#F2F3F8';
   const panelBg = dark? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.7)';
