@@ -21,9 +21,18 @@ Source: the uploaded `Pasted markdown(20261115-035953).md`, produced by AI Studi
 3. Google OAuth authorization-code flow with PKCE, CSRF state, encrypted short-lived HttpOnly session cookies, and read-only Drive metadata listing.
 4. No executor, no third-party payment APIs, no Gmail send, no Docs/Calendar modifications, no refresh tokens, and no automatic change of account permissions.
 
-## Verification and remaining work
+## Verification results (2026-11-15)
 
-- Local typecheck, JavaScript static smoke test, Next.js production build and HTTP route checks should pass before release. A successful configuration-error response does **not** count as a verified live Gemini/Drive invocation.
+- `npm run typecheck` — **pass**.
+- `npm run test:smoke` — **pass**, including parsing and mounting the Gemini Studio module.
+- `npm run build` — **pass** with 23 Next.js app routes generated.
+- Production HTTP smoke — **pass**: `/`, `/google-agentic-browser.html`, `/google-studio.js`, `/api/google/status`, access-denied Drive, OAuth missing-credentials response, invalid prompt guards, and Gemini missing-key response.
+- `npm run lint` — **not passing**: 26 errors / 1 warning in legacy React components and CommonJS scripts (mainly React hooks rules and CommonJS lint configuration). These pre-existing code-quality issues do not block typecheck/build but remain cleanup work.
+- Real provider invocation — **not tested** because no Gemini API key or Google OAuth credentials were supplied. No actual Google Drive files were read.
+
+## Remaining work
+
+- A successful configuration-error response does **not** count as a verified live Gemini/Drive invocation.
 - Live Google Gemini/Drive integration requires an API key and OAuth client owned by the user, configured securely in the deployment environment. Both must be tested interactively with the actual key/account before claiming end-to-end connectivity.
 - Production service still needs user authentication, durable rate limiting, cost budgets, per-user isolation, observability, CSP hardening, session refresh/revocation, and an independent payment/action executor with a correct approval state machine.
 - The primary UI is a working browser-like **web prototype**, not a Chromium engine or a general-purpose browsing agent. Many original demonstration actions remain simulated.

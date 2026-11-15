@@ -14,13 +14,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Message must contain 1–8000 characters.' }, { status: 400 });
     }
     const history: GeminiTurn[] = Array.isArray(body.history) ? body.history
-      .filter((item: unknown): item is { role: 'assistant' | 'user'; content: string } =>
+      .filter((item: unknown): item is { role: 'assistant' | 'ai' | 'user'; content: string } =>
         Boolean(item && typeof item === 'object' &&
-          ['assistant', 'user'].includes((item as {role?: string}).role || '') &&
+          ['assistant', 'ai', 'user'].includes((item as {role?: string}).role || '') &&
           typeof (item as {content?: unknown}).content === 'string'))
       .slice(-12)
-      .map((item: { role: 'assistant' | 'user'; content: string }) => ({
-        role: item.role === 'assistant' ? 'model' as const : 'user' as const,
+      .map((item: { role: 'assistant' | 'ai' | 'user'; content: string }) => ({
+        role: item.role === 'user' ? 'user' as const : 'model' as const,
         text: item.content.slice(0, 3000),
       })) : [];
     const reply = await generateGemini(SYSTEM, [...history, { role: 'user', text: message }]);
