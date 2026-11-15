@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root{
+  --bg:#070913;
+  --panel:rgba(255,255,255,.06);
+  --panel2:rgba(255,255,255,.10);
+  --line:rgba(255,255,255,.12);
+  --text:#F4F5FF;
+  --muted:#9AA0BC;
+  --accent:#0358F7;
+  --accent2:#FD02F5;
+  --glow:rgba(3,88,247,.35);
+  --card:#121527;
+  --success:#2BD98A;
+  --warn:#FFD400;
+  --danger:#FA3D1D;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,-apple-system,BlinkMacSystemFont,sans-serif}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+button{font-family:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+.glass{background:var(--panel);backdrop-filter:blur(22px);border:1px solid var(--line)}
+.grain{background-image:radial-gradient(rgba(255,255,255,.12) 1px, transparent 1px);background-size:3px 3px}
+@keyframes breathe{0%,100%{transform:scale(1) rotate(0deg);opacity:.75}50%{transform:scale(1.14) rotate(8deg);opacity:1}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes pulseDot{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.breathe{animation:breathe 7s ease-in-out infinite}
+.floaty{animation:floaty 5s ease-in-out infinite}
+.slide-up{animation:slideUp .28s ease both}
+.shimmer{background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.22),rgba(255,255,255,.08));background-size:200% 100%;animation:shimmer 1.4s linear infinite}
+.no-scrollbar::-webkit-scrollbar{display:none}
+input,textarea{outline:none}
+input:focus,textarea:focus{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--glow)}

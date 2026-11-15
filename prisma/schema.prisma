@@ -1,0 +1,115 @@
+// Google Agentic Browser — Prisma schema
+// Persistent browser state: notes, history, agent tasks, spaces
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  text      String
+  done      Boolean  @default(false)
+  pinned    Boolean  @default(false)
+  space     String   @default("Work")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([space])
+  @@index([done])
+}
+
+model HistoryItem {
+  id        String   @id @default(cuid())
+  title     String
+  domain    String
+  url       String
+  space     String   @default("Work")
+  fav       String   @default("G")
+  visitedAt DateTime @default(now())
+
+  @@index([space])
+  @@index([visitedAt])
+}
+
+model AgentTask {
+  id        String   @id @default(cuid())
+  prompt    String
+  steps     String   // JSON array of {title, status}
+  status    String   @default("queued") // queued | running | done | error
+  result    String?
+  space     String   @default("Work")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([space])
+}
+
+// Recorder history for the simulated multi-agent mission.
+model AgentRun {
+  id         String   @id @default(cuid())
+  goal       String
+  steps      String
+  receipt    String
+  usdcSpent  Float    @default(0)
+  gates      Int      @default(0)
+  denied     Boolean  @default(false)
+  twin       Boolean  @default(false)
+  space      String   @default("Research")
+  createdAt  DateTime @default(now())
+
+  @@index([space])
+  @@index([createdAt])
+}
+
+// Sample Money OS records. No real payment service is connected.
+model Approval {
+  id        Int      @id
+  title     String
+  amount    Int
+  detail    String
+  risk      String   @default("Low")
+  autoIn    Int?
+  space     String   @default("Money")
+  createdAt DateTime @default(now())
+
+  @@index([space])
+}
+
+model Tx {
+  id        Int      @id
+  name      String
+  amount    Int
+  cat       String
+  rule      String
+  space     String
+  icon      String   @default("✓")
+  time      String
+  createdAt DateTime @default(now())
+
+  @@index([space])
+}
+
+model Order {
+  id        String   @id
+  name      String
+  amount    Int
+  status    String   @default("Paid")
+  date      String
+  createdAt DateTime @default(now())
+}
+
+model Space {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  accent    String
+  icon      String
+  desc      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
