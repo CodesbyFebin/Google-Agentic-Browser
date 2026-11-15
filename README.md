@@ -4,13 +4,57 @@
 
 > **From browsing pages to completing goals — with Gemini-powered plans and a human in control.**
 
-**Stage:** Idea-stage startup · **Buildathon:** Startup Buildathon India 2026 · **Technology:** Next.js, TypeScript, Google Gemini SDK, Firebase Authentication, Firestore, Google OAuth
+**Stage:** Idea-stage startup with a working MVP prototype · **Buildathon:** Startup Buildathon India 2026 · **Technology:** Next.js, TypeScript, Google Gemini SDK, Firebase Authentication, Firestore, Google OAuth
 
 Google Agentic Browser is an independent Google-inspired browser workspace prototype by Febin Francis. It combines six agent personas, spaces and tabs, split views, simulated approval checkpoints, activity replay, a Money OS concept, live Gemini planning, and an optional read-only Google Drive connection. It is **not an official Google product or a replacement browser engine**.
 
 The problem: work gets scattered between tabs, apps, logins, and approval dialogs. The goal is to turn that fragmented work into one inspectable mission, while keeping consequential decisions with a person.
 
 <img width="1672" height="941" alt="Google Agentic Browser Dashboard" src="https://github.com/user-attachments/assets/8b943bdf-6ecd-47c2-b0bd-ca3b53b8a613" />
+
+## Full-stack Google AI Studio application
+
+The latest standalone Next.js workspace from the AI Studio build is in **[`apps/ai-studio/`](apps/ai-studio/README.md)**. It adds server-side Gemini chat and structured mission planning, Custom Agent Studio, Firebase sign-in and Firestore-backed user data, optional Google Workspace integration, and signed one-time approval checkpoints. The original root app and its current UI remain unchanged.
+
+| App | Location | What runs |
+| --- | --- | --- |
+| Unified browser showcase | Repository root (`/`) | Original neon UI, Spaces, alternative browser editions, Gemini planning APIs, simulated Money OS and optional read-only Google Drive metadata. |
+| Full-stack AI Studio workspace | [`apps/ai-studio/`](apps/ai-studio/) | Multi-pane interface, six planning roles, authenticated Gemini API routes, streaming, Custom Agent Studio, Firebase/Firestore persistence and gated Google Workspace actions. |
+
+Each app is independently installable and runs on port 3000 by default. Start **one** at a time unless you choose separate ports.
+
+### Run the AI Studio workspace
+
+```bash
+cd apps/ai-studio
+npm ci
+cp .env.example .env.local
+npm run doctor
+npm run dev
+```
+
+Open [localhost:3000](http://localhost:3000). Configure **GEMINI_API_KEY** privately in `.env.local` or your deployment secret manager. For production, set a random 32+ character **GOOGLE_SESSION_SECRET** and configure your own Firebase sign-in project. The AI Studio app defaults to `gemini-3.1-flash-lite`; Hydrogen-style playground identifiers must be verified against your API key's actual model access.
+
+All AI routes, including mission-step execution, require a verified Firebase identity; a narrowly scoped guest override exists **only for explicit local development**. Google Workspace account writes require an authenticated identity, an action-specific single-use human approval, and an operator-controlled feature flag (off by default). Spending remains simulation-only. Do not turn on live writes in a public demo without a security review. See the [credential setup guide](apps/ai-studio/CREDENTIALS.md) and [architecture details](apps/ai-studio/ARCHITECTURE.md).
+
+### Full-stack implementation map
+
+| Layer | Implemented | Remaining for a production service |
+| --- | --- | --- |
+| UI | Tabs, Spaces, split panes, mission plans, replay and Custom Agent Studio | Real Chromium navigation engine, hardened remote page reader and multi-device sync |
+| AI | Server-side `@google/genai` chat, streaming, planning, summaries, analysis and tools | Per-user durable quotas, budget monitoring and production load tests |
+| Identity/data | Verified Firebase ID tokens; Firestore workspace and activity endpoints | Deploy user-owned Firebase config/rules and verify production data lifecycle |
+| Google Workspace | Incremental OAuth; Drive, Docs, Calendar and Gmail routes | Production OAuth consent verification and full security review before writes |
+| Sensitive actions | Signed, expiring, single-use approvals; simulated payments | Durable transactional approvals/reconciliation and real-money integrations (not enabled) |
+| Deployment | Automated lint, tests, typechecking and Next.js build; Cloud Run Dockerfile | Actual deployment and credentialed Google API smoke tests |
+
+### Why this startup
+
+AI assistants are excellent at drafting answers, but founders often still juggle separate tabs, account permissions and follow-ups. Google Agentic Browser focuses on an **inspectable plan**: what each proposed step uses, which agent proposed it, what might change, and where human approval is required. The first target users are **solo founders and researchers in India**, with potential US/UK expansion after pilots. Proposed business model: **freemium** personal missions → paid individual/team collaboration; pricing and adoption are not yet validated. The six roles are planning personas, not six independent autonomous workers.
+
+For a buildathon demo, start with: *“Research five competitors and draft a launch brief.”* Inspect the proposed plan, check sources and risk flags, then test a simulated approval. The live Gemini demonstration requires your own key and authenticated Firebase user; no generated response is faked when the API is unconfigured.
+
+> The remainder of this README documents the original **root showcase app**. The newer full-stack AI Studio routes and deployment workflow are documented under [`apps/ai-studio`](apps/ai-studio/README.md).
 
 ## Build and run
 

@@ -1,0 +1,6 @@
+{
+  "name": "Google Agentic Browser",
+  "description": "The Browser That Does — an independent, AI-native multi-agent browser workspace powered by Gemini, Firebase, and human-in-the-loop Google Workspace orchestration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
