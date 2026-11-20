@@ -13,6 +13,13 @@ assert.match(html, /unified-features\.js/);
 assert.match(html, /unified-features\.css/);
 assert.match(html, /google-studio\.js/);
 assert.match(html, /google-studio\.css/);
+assert.match(html, /hero-v3/, "V3 hero style must remain in the demo");
+assert.match(html, /--hero-gradient:/, "V3 palette must remain in the demo");
+assert.match(html, /mobileSidebarScrim/, "Mobile navigation must remain accessible");
+assert.match(html, /function toggleSidebar\(/, "Responsive sidebar must be functional");
+assert.match(html, /function prefillMission\(/, "Mission presets must use existing mission flow");
+assert.match(html, /unified-features\.js/, "Existing unified feature integration must remain");
+
 const inline = [...html.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/g)]
   .map(x => x[1]).find(x => x.includes("const TH="));
 assert.ok(inline, "supplied UI script is present");
