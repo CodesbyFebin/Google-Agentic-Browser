@@ -89,7 +89,7 @@ const STEPS=[
 {a:'scr',t:'act',g:1,page:'mail',url:'mail.google.com/mail/u/0/#compose',msg:'Emailed you the summary with the receipt and the Docs link.'},
 {a:'orch',t:'done',page:'done',url:'agenet://receipt',msg:'Mission complete. Receipt hash '}];
 const POS={home:[38,45],search:[30,55],repo:[62,35],pay:[55,62],done:[45,32],mail:[50,45],github:[40,40]};
-const S={theme:'Nova Aurora',mobileSidebar:false,dark:!matchMedia('(prefers-color-scheme: light)').matches,space:'Work',split:1,zen:false,focus:false,sidebar:true,rtab:'mission',twin:false,active:'t1',ev:[],view:null,running:false,missions:0,
+const S={theme:'Nova Aurora',mobileSidebar:false,dark:true,space:'Work',split:1,zen:false,focus:false,sidebar:true,rtab:'mission',twin:false,active:'t1',ev:[],view:null,running:false,missions:0,
  settings:{breathing:true,trackers:true,autonap:true},
  tabs:[{id:'t1',title:'New Tab',space:'Work',page:'home',fav:'✦',pinned:true,domain:'agentic://new-tab'},{id:'t2',title:'agentic-browser · GitHub',space:'Work',page:'github',fav:'🐙',domain:'github.com/agentic-browser'},{id:'t3',title:'Inbox',space:'Personal',page:'inbox',fav:'✉️',domain:'mail.google.com'},{id:'t4',title:'New Tab',space:'Research',page:'home',fav:'✦',domain:'agentic://new-tab'},{id:'t5',title:'New Tab',space:'Focus',page:'home',fav:'✦',domain:'agentic://new-tab'}]};
 const $=id=>document.getElementById(id),sleep=ms=>new Promise(r=>setTimeout(r,ms));
