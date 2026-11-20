@@ -33,6 +33,7 @@ The UI shows **Disconnected**, **Error**, or **Unavailable** when required crede
 
 1. Deploy the AI Studio app from `apps/ai-studio` with Node.js 24 and the existing `npm run build`.
 2. Set `GEMINI_API_KEY` as a server-only environment secret for the Vercel project. Do not use a `NEXT_PUBLIC_` prefix for this key.
+   - Compatibility: the server also reads the existing sensitive Production variable named `geminiapi` (after `GEMINI_API_KEY` and `GOOGLE_API_KEY`). Vercel cannot rename a Sensitive variable through its API; do not copy the secret into GitHub or the chat. Prefer `GEMINI_API_KEY` for new setups.
 3. Configure Firebase Authentication, add the production host to authorized domains, enable Google sign-in and deploy `firestore.rules` to the correct Firestore database.
 4. Configure Google OAuth consent and required Gmail, Drive, Docs and Calendar scopes. Users explicitly sign in and consent; the access token remains in browser memory.
 5. Open `/live`. Sign in and connect Google Workspace. Confirm real provider data loads. Disconnect to verify the cards show **Disconnected**, not sample data.
