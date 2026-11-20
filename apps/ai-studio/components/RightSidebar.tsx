@@ -46,7 +46,7 @@ export function RightSidebar() {
   return (
     <aside
       aria-label="AI and Agent sidebar"
-      className="max-md:fixed max-md:inset-0 max-md:z-40 w-full md:w-[400px] shrink-0 flex flex-col border-l border-slate-700/40 bg-[#0B1220]/95 backdrop-blur-xl"
+      className="gab-right-sidebar max-md:fixed max-md:inset-0 max-md:z-40 w-full md:w-[320px] xl:w-[340px] shrink-0 flex flex-col border-l border-slate-700/40 bg-[#070913]/95 backdrop-blur-xl"
     >
       {/* Pill Tab Navigation Strip */}
       <div className="flex items-start justify-between border-b border-slate-700/40 px-3 py-2.5 gap-1.5">
@@ -64,6 +64,8 @@ export function RightSidebar() {
                 key={tab.id}
                 type="button"
                 role="tab"
+                id={`gab-sidebar-tab-${tab.id}`}
+                aria-controls="gab-sidebar-panel"
                 aria-selected={active}
                 onClick={() => setSidebarTab(tab.id)}
                 className={`relative flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-medium transition-all whitespace-nowrap shrink-0 ${
@@ -95,7 +97,7 @@ export function RightSidebar() {
       </div>
 
       {/* Active Panel */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div id="gab-sidebar-panel" role="tabpanel" aria-labelledby={`gab-sidebar-tab-${sidebarTab}`} className="flex-1 min-h-0 overflow-hidden">
         {sidebarTab === 'gemini' && <GeminiPanel />}
         {sidebarTab === 'studio' && <AgentStudioPanel />}
         {sidebarTab === 'agents' && <AgentsMissionPanel />}
