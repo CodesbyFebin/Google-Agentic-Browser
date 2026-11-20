@@ -83,29 +83,34 @@ export function TopToolbar() {
   };
 
   return (
-    <header className="border-b border-slate-700/40 bg-[#0B1220]/90 backdrop-blur-xl">
+    <header className="gab-topbar border-b border-slate-700/40 bg-[#070913]/90 backdrop-blur-xl">
       {/* Row 1: Browser Brand + Utility Controls */}
       <div className="flex items-center justify-between gap-3 border-b border-slate-700/35 px-3.5 py-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <span
             aria-hidden="true"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-400 via-blue-500 to-purple-600 text-white shadow-md shadow-blue-950/50"
+            className="gab-brand-mark inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white"
           >
             <Compass className="h-4 w-4" />
           </span>
           <div className="flex flex-col leading-tight min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="font-display text-sm font-semibold tracking-tight text-slate-100 whitespace-nowrap">
-                Google Agentic Browser
+                Agentic Browser
               </span>
               <span className="hidden md:inline text-xs text-slate-400 whitespace-nowrap">
-                — the browser that does
+                — the browser that does, with your approval
               </span>
             </div>
             <span className="hidden sm:inline text-[10px] text-slate-400/90 whitespace-nowrap">
-              Concept prototype · Gemini-powered · Human-approved
+              Independent concept · Gemini-powered · Human-approved
             </span>
           </div>
+        </div>
+
+        <div className="hidden xl:flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-200" role="status">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+          Approval-first workspace
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
@@ -132,6 +137,7 @@ export function TopToolbar() {
               }
             }}
             aria-pressed={sidebarOpen}
+            aria-label="Toggle Gemini sidebar"
             className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
               sidebarOpen
                 ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400/40'
@@ -179,7 +185,7 @@ export function TopToolbar() {
             type="button"
             onClick={() => setDiscoveryOpen(true)}
             aria-label="Feature discovery guide"
-            className="hidden sm:inline-flex items-center gap-1 rounded-xl bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 hover:bg-amber-300 whitespace-nowrap shadow-sm shadow-amber-500/20 transition-colors"
+            className="hidden sm:inline-flex items-center gap-1 rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/15 whitespace-nowrap transition-colors"
           >
             <span>Features</span>
           </button>
@@ -213,7 +219,7 @@ export function TopToolbar() {
           type="button"
           onClick={() => setCommandPaletteOpen(true)}
           aria-label="Search tabs, actions, or agents"
-          className="hidden lg:flex w-[240px] shrink-0 items-center justify-between gap-2 rounded-xl border border-slate-700/50 bg-[#0f172a]/75 px-2.5 py-1.5 text-xs text-slate-400 hover:border-blue-500/40 hover:text-slate-200 transition-colors"
+          className="hidden lg:flex w-[240px] shrink-0 items-center justify-between gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-slate-400 hover:border-blue-500/40 hover:text-slate-200 transition-colors"
         >
           <span className="flex items-center gap-2 truncate">
             <Search className="h-3.5 w-3.5 text-slate-400 shrink-0" />

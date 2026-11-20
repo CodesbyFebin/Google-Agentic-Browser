@@ -63,7 +63,7 @@ export function CenterWorkspace() {
   return (
     <main
       aria-label="Multi-pane browser workspace"
-      className="flex-1 flex flex-col min-w-0 bg-transparent p-2.5 gap-2 overflow-hidden"
+      className="gab-workspace flex-1 flex flex-col min-w-0 bg-transparent p-2.5 gap-2 overflow-hidden"
     >
       {/* Workspace Split Ratio Strip */}
       {paneCount > 1 && (
@@ -116,7 +116,7 @@ export function CenterWorkspace() {
                 }
                 setDraggedPane(null);
               }}
-              className={`flex flex-col min-h-[220px] rounded-2xl border bg-[#0f172a]/70 backdrop-blur-md overflow-hidden transition-all ${
+              className={`gab-pane flex flex-col min-h-[220px] rounded-[22px] border bg-[#121527]/70 backdrop-blur-md overflow-hidden transition-all ${
                 isThreePaneSpan ? 'md:col-span-2' : ''
               } ${
                 isActivePane
@@ -290,6 +290,30 @@ function MissionControlPane() {
 
   return (
     <div className="space-y-3.5">
+      <section className="gab-mission-hero relative overflow-hidden rounded-[28px] px-5 py-6 sm:px-7" aria-label="Mission control introduction">
+        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-1.5" aria-hidden="true">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#4285F4]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#EA4335]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#FBBC04]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#34A853]" />
+            </div>
+            <p className="mt-3 text-[10px] font-bold uppercase tracking-[.18em] text-white/90">Mission control</p>
+            <h2 className="mt-1 font-display text-[clamp(26px,4vw,38px)] font-bold leading-[1.05] tracking-tight text-white">
+              Think bigger.<br />Stay in control.
+            </h2>
+            <p className="mt-2 max-w-[520px] text-xs leading-relaxed text-white/90 sm:text-sm">
+              Your six-agent crew researches and plans. External writes and spending always wait for your approval.
+            </p>
+          </div>
+          <span className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-white/25 bg-black/25 px-3 py-2 text-[11px] font-semibold text-white backdrop-blur-sm">
+            <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" />
+            Approval-first
+          </span>
+        </div>
+      </section>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-display text-base font-semibold text-slate-100">
@@ -321,7 +345,7 @@ function MissionControlPane() {
           e.preventDefault();
           await startMission(objectiveInput);
         }}
-        className="space-y-2 rounded-2xl border border-slate-700/40 bg-[#0B1220]/75 p-3"
+        className="gab-mission-launcher space-y-3 rounded-[22px] border border-white/10 bg-white/5 p-4"
       >
         <label
           htmlFor="pane-mission-objective"
@@ -337,6 +361,30 @@ function MissionControlPane() {
           placeholder="Describe a multi-step objective for the 6-agent crew..."
           className="w-full rounded-xl border border-slate-700/50 bg-[#0f172a]/80 px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
         />
+        <div className="flex flex-wrap items-center gap-2" aria-label="Mission objective presets">
+          <span className="text-[11px] text-slate-400">Try a template:</span>
+          <button
+            type="button"
+            className="gab-quick-preset"
+            onClick={() => setObjectiveInput('Create a concise morning briefing from my calendar, important messages, and priorities. Ask for approval before any external write.')}
+          >
+            ☀ Morning brief
+          </button>
+          <button
+            type="button"
+            className="gab-quick-preset"
+            onClick={() => setObjectiveInput('Triage my inbox, summarize urgent messages, and draft suggested replies. Never send without explicit approval.')}
+          >
+            ✉ Inbox zero
+          </button>
+          <button
+            type="button"
+            className="gab-quick-preset"
+            onClick={() => setObjectiveInput('Research three project management tools, compare pricing and features, recommend the best option, and save a report.')}
+          >
+            ◈ Compare tools
+          </button>
+        </div>
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-slate-400">
             External writes and spending pause for your approval.
@@ -344,7 +392,7 @@ function MissionControlPane() {
           <button
             type="submit"
             disabled={!objectiveInput.trim()}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50 whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#0358F7] px-4 py-2 text-xs font-semibold text-white hover:bg-[#1E6CFF] disabled:opacity-50 whitespace-nowrap"
           >
             <Rocket className="h-3.5 w-3.5" />
             <span>Run Mission</span>
