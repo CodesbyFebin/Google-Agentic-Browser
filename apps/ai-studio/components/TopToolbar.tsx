@@ -114,6 +114,7 @@ export function TopToolbar() {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto">
+          <a href="/live" className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-400/35 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-200 hover:bg-emerald-400/20 whitespace-nowrap" title="Provider-backed live workspace; no mock data">Live Workspace ↗</a>
           <button
             type="button"
             onClick={() => {

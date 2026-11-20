@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit --pretty false",
     "doctor": "node --env-file-if-exists=.env.local scripts/doctor.mjs",
-    "test": "node --import tsx --test lib/security.test.ts lib/mission-logic.test.ts lib/approval-store.test.ts lib/server-firestore.test.ts lib/server/gemini-access.test.ts firestore.rules.test.ts",
+    "test": "node --import tsx --test lib/security.test.ts lib/mission-logic.test.ts lib/approval-store.test.ts lib/server-firestore.test.ts lib/server/gemini-access.test.ts firestore.rules.test.ts lib/live-github.test.ts",
     "clean": "next clean"
   },
   "dependencies": {
