@@ -16,7 +16,10 @@
     "test:phase2": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/phase2-guards.test.mjs",
     "test:drive": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/google-drive-metadata.test.mjs",
     "test:firebase": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/firebase-config.test.mjs",
-    "test": "npm run test:smoke && npm run test:phase2 && npm run test:drive && npm run test:firebase"
+    "test": "npm run test:smoke && npm run test:phase2 && npm run test:drive && npm run test:firebase && npm run test:hosting",
+    "prebuild": "prisma generate",
+    "hostinger:check": "node scripts/check-hostinger.cjs",
+    "test:hosting": "node --test tests/hostinger-config.test.cjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
