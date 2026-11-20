@@ -1,0 +1,41 @@
+name: Temporary lockfile refresh (security upgrade branch)
+on:
+  push:
+    branches:
+      - fix/security-audit-next-phases-20261120
+    paths:
+      - .github/workflows/lockfile-refresh-temporary.yml
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Refresh root lockfile and apply compatible advisory fixes
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
+      - name: Refresh AI Studio lockfile and apply compatible advisory fixes
+        working-directory: apps/ai-studio
+        run: |
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
+      - name: Verify both lockfiles can be installed without changing them
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          (cd apps/ai-studio && npm ci --ignore-scripts --no-audit --no-fund)
+      - name: Commit generated lockfiles to feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json apps/ai-studio/package.json apps/ai-studio/package-lock.json
+          if ! git diff --cached --quiet; then
+            git commit -m "fix(deps): regenerate lockfiles with patched dependency graph"
+            git push origin HEAD:fix/security-audit-next-phases-20261120
+          fi
