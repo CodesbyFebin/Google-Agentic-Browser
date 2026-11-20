@@ -23,6 +23,7 @@ assert.match(html, /unified-features\.js/, "Existing unified feature integration
 const inline = [...html.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/g)]
   .map(x => x[1]).find(x => x.includes("const TH="));
 assert.ok(inline, "supplied UI script is present");
+assert.equal(inline.includes("${t.title}"), false, "Unescaped tab titles must not be interpolated into HTML");
 new vm.Script(inline, { filename: "user-ui-inline.js" });
 new vm.Script(extension, { filename: "unified-features.js" });
 new vm.Script(studio, { filename: "google-studio.js" });
