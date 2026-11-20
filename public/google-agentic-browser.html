@@ -152,7 +152,7 @@ function rSide(){
  const sb=$('side');sb.style.display=(S.zen||!S.sidebar)?'none':'';
  sb.classList.toggle('mobile-open',!!S.mobileSidebar&&!S.zen);
  const scrim=$('mobileSidebarScrim');if(scrim)scrim.hidden=!(S.mobileSidebar&&!S.zen);
- const toggle=$('toggleSidebarButton');if(toggle)toggle.setAttribute('aria-expanded',String(!!S.mobileSidebar));
+ const toggle=$('toggleSidebarButton');if(toggle)toggle.setAttribute('aria-expanded',String(matchMedia('(max-width:767px)').matches?!!S.mobileSidebar:!!S.sidebar));
  $('spaces').innerHTML=SPACES.map(s=>`<button onclick="goSpace('${s.name}')" class="rounded-2xl p-2 text-center border transition" style="border-color:${S.space===s.name?s.accent:'rgba(255,255,255,.08)'};background:${S.space===s.name?s.accent+'22':'rgba(255,255,255,.03)'}"><div class="text-xl">${s.icon}</div><div class="text-[11px] font-bold mt-1">${s.name}</div></button>`).join('');
  $('sdesc').textContent=SPACES.find(s=>s.name===S.space).desc+' • '+spaceTabs().length+' tabs';
  const q=($('tq').value||'').toLowerCase();
