@@ -6,12 +6,12 @@ import { redactSecrets } from '../security';
 let cachedClient: GoogleGenAI | null = null;
 
 export function isGeminiConfigured(): boolean {
-  const key = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)?.trim();
+  const key = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.geminiapi)?.trim();
   return Boolean(key && key !== 'MY_GEMINI_API_KEY');
 }
 
 export function getGeminiClient(): GoogleGenAI {
-  const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY)?.trim();
+  const apiKey = (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.geminiapi)?.trim();
   if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
     throw new GeminiServiceError(
       'MISSING_API_KEY',
