@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { NextRequest } from 'next/server';
-import { GeminiServiceError, requireGeminiSession } from './gemini';
+import { GeminiServiceError, isGeminiConfigured, requireGeminiSession } from './gemini';
 import { POST as runMissionStep } from '../../app/api/missions/step/route';
 
 const testRequest = () => new NextRequest('http://localhost:3000/api/ai/chat', {
@@ -56,5 +56,25 @@ test('mission execution endpoint denies anonymous requests before invoking Gemin
   } finally {
     if (previous === undefined) delete process.env.GEMINI_ALLOW_GUEST_DEV;
     else process.env.GEMINI_ALLOW_GUEST_DEV = previous;
+  }
+});
+
+test('existing sensitive Vercel geminiapi variable is recognized without revealing its value', () => {
+  const keys = ['GEMINI_API_KEY', 'GOOGLE_API_KEY', 'geminiapi'] as const;
+  const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  try {
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+    process.env.geminiapi = 'test-only-placeholder-not-a-real-key';
+    assert.equal(isGeminiConfigured(), true);
+    process.env.geminiapi = 'MY_GEMINI_API_KEY';
+    assert.equal(isGeminiConfigured(), false);
+    delete process.env.geminiapi;
+    assert.equal(isGeminiConfigured(), false);
+  } finally {
+    for (const key of keys) {
+      if (original[key] === undefined) delete process.env[key];
+      else process.env[key] = original[key];
+    }
   }
 });
