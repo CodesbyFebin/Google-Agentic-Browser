@@ -156,7 +156,7 @@ export function SpacesSidebar() {
   return (
     <aside
       aria-label="Spaces and navigation"
-      className="hidden lg:flex w-[252px] shrink-0 flex-col border-r border-slate-700/40 bg-[#0B1220]/90 backdrop-blur-md select-none"
+      className="gab-sidebar hidden lg:flex w-[252px] shrink-0 flex-col border-r border-slate-700/40 bg-[#070913]/90 backdrop-blur-md select-none"
     >
       {/* Spaces Switcher Grid */}
       <div className="p-3 border-b border-slate-700/35">
