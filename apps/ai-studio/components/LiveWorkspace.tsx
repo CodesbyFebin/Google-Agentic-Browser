@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { doc, getDocFromServer, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import { Activity, ArrowUpRight, Bot, CalendarDays, CheckCircle2, Cloud, ExternalLink, FileText, Github, Loader2, Mail, RefreshCw, Send, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
+import { ArrowUpRight, Loader2, RefreshCw, Send, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
 import { useBrowserState } from '@/components/BrowserStateProvider';
 import { db } from '@/lib/firebase/client';
 import { saveReportToFirestore } from '@/lib/firebase/firestore-service';
