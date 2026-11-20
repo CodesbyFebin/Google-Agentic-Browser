@@ -14,6 +14,8 @@ assert.match(html, /unified-features\.css/);
 assert.match(html, /google-studio\.js/);
 assert.match(html, /google-studio\.css/);
 assert.match(html, /hero-v3/, "V3 hero style must remain in the demo");
+assert.match(html, /https:\/\/google-agentic-browser-ai-studio\.vercel\.app/, "Showcase must link to the working AI Studio deployment");
+assert.match(html, /rel="noopener noreferrer"/, "External launch link must be safe");
 assert.match(html, /--hero-gradient:/, "V3 palette must remain in the demo");
 assert.match(html, /mobileSidebarScrim/, "Mobile navigation must remain accessible");
 assert.match(html, /function toggleSidebar\(/, "Responsive sidebar must be functional");

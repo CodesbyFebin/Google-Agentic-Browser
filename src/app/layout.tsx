@@ -3,6 +3,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://agenticbrowser.live"),
+  alternates: { canonical: "/" },
   title: "Google Agentic Browser — The browser that does",
   description:
     "An independent browser concept combining agent missions, workspace views, decision logs and demo payments. Not affiliated with Google.",
@@ -20,6 +22,7 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
   },
   openGraph: {
+    url: "https://agenticbrowser.live/",
     title: "Google Agentic Browser",
     description: "Independent agentic browser concept with supervised workflows.",
     siteName: "Google Agentic Browser",
