@@ -20,6 +20,11 @@ assert.match(html, /--hero-gradient:/, "V3 palette must remain in the demo");
 assert.match(html, /mobileSidebarScrim/, "Mobile navigation must remain accessible");
 assert.match(html, /function toggleSidebar\(/, "Responsive sidebar must be functional");
 assert.match(html, /function prefillMission\(/, "Mission presets must use existing mission flow");
+assert.match(html, /id="sideApps"/, "Sidebar must contain app shortcuts");
+assert.match(html, /id="sideMoreApps"/, "Sidebar must offer additional apps");
+assert.match(html, /onclick="createSpace\(\)"/, "New Space must have a real handler");
+assert.match(html, /function appsHome\(/, "Home must render Your Apps");
+assert.match(html, /function openApp\(index\)/, "App tiles and sidebar must share a working launcher");
 assert.match(html, /unified-features\.js/, "Existing unified feature integration must remain");
 
 const inline = [...html.matchAll(/<script(?:[^>]*)>([\s\S]*?)<\/script>/g)]
@@ -32,7 +37,7 @@ new vm.Script(studio, { filename: "google-studio.js" });
 new vm.Script(firebaseWorkspace, { filename: "firebase-workspace.js" });
 
 const el = () => ({
-  innerHTML: "", value: "", style: { setProperty() {} }, classList: { add() {} },
+  innerHTML: "", value: "", style: { setProperty() {} }, classList: { add() {}, toggle() {}, remove() {} },
   append() {}, remove() {}, insertBefore() {}, insertAdjacentElement() {},
   addEventListener() {}, setAttribute() {}, lastElementChild: {},
 });
@@ -66,7 +71,33 @@ ctx.window = ctx; // In a real classic script, window properties are globals.
 const beforeBoot = inline.slice(0, inline.indexOf("$('root').innerHTML=`"));
 assert.ok(beforeBoot.length > 1000);
 vm.runInContext(beforeBoot, ctx);
+// The screenshot-inspired home grid, sidebar and full launcher must expose real app destinations.
+const home = vm.runInContext("page(S.tabs[0])", ctx);
+assert.match(home, /Your Apps/);
+assert.match(home, /See all/);
+assert.match(home, /openApp\(0\)/);
+assert.equal((vm.runInContext("appsHome()", ctx).match(/class="app-tile/g) || []).length, 12);
+vm.runInContext("rSide()", ctx);
+for (const label of ["Work", "Personal", "Research", "Focus"]) {
+  assert.match(element("spaces").innerHTML, new RegExp(label));
+}
+for (const label of ["Gmail", "Calendar", "Drive", "Docs", "Sheets", "Meet", "Maps", "YouTube", "Photos", "Keep", "Translate", "Search"]) {
+  assert.match(element("sideApps").innerHTML, new RegExp(label));
+}
+assert.match(element("sideMoreApps").innerHTML, /Slides/);
+assert.match(element("sideMoreApps").innerHTML, /Chat/);
+vm.runInContext("launcher()", ctx);
+assert.match(element("modal").innerHTML, /All apps/);
+assert.equal((element("modal").innerHTML.match(/class="app-tile/g) || []).length, 16);
 vm.runInContext("rShell=()=>{};rSide=()=>{};rMain=()=>{};upd=()=>{};rBack=()=>{};rRight=()=>{};", ctx);
+vm.runInContext("openApp(0)", ctx);
+assert.equal(vm.runInContext("S.tabs.at(-1).page", ctx), "inbox");
+assert.equal(vm.runInContext("S.tabs.at(-1).title", ctx), "Gmail");
+ctx.prompt = () => "Design";
+vm.runInContext("createSpace()", ctx);
+assert.equal(vm.runInContext("S.space", ctx), "Design");
+assert.equal(vm.runInContext("S.tabs.at(-1).page", ctx), "home");
+assert.equal(vm.runInContext("SPACES.at(-1).name", ctx), "Design");
 vm.runInContext(extension, ctx);
 assert.equal(vm.runInContext("S.unified.approvals.length", ctx), 3);
 assert.match(vm.runInContext("GP.money()", ctx), /Waiting for your approval/);
