@@ -52,6 +52,10 @@ The project includes a visual browser-workspace showcase and a separate full-sta
 - **Identity and data:** Firebase sign-in and Firestore-backed user workspaces in the AI Studio application.
 - **Optional Google integrations:** OAuth-connected Google Workspace capabilities, subject to configured scopes, identity, feature flags and approvals. The root showcase's Drive integration is **metadata-only and read-only**.
 
+## Deployment
+
+For the split-domain deployment, see [Hostinger setup and database safety](docs/HOSTINGER_DEPLOYMENT.md). The repository-root showcase runs on Hostinger; the independent AI Studio in `apps/ai-studio` remains on Vercel. `npm run build` automatically generates Prisma Client through `prebuild`.
+
 ## Two applications
 
 | Application | Directory | Purpose |
