@@ -5,9 +5,7 @@ const nextConfig: NextConfig = {
   // This app is independently deployed from a repository with another
   // Next.js lockfile at its root. Trace only this app's server dependencies.
   outputFileTracingRoot: process.cwd(),
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Next.js 16 no longer accepts the eslint config key; lint runs in CI.
   typescript: {
     ignoreBuildErrors: false,
   },
