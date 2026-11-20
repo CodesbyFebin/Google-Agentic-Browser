@@ -4,17 +4,31 @@
 
 @layer base {
   :root {
-    --gab-bg: #0b1220;
-    --gab-surface: rgba(15, 23, 42, 0.72);
-    --gab-surface-elevated: rgba(20, 30, 52, 0.82);
-    --gab-border: rgba(148, 163, 184, 0.16);
-    --gab-text: #f1f5f9;
-    --gab-muted: #94a3b8;
+    --gab-bg: #070913;
+    --gab-bg-deep: #05070F;
+    --gab-sidebar: #0A0D1C;
+    --gab-card: #121527;
+    --gab-accent: #0358F7;
+    --gab-accent-2: #FD02F5;
+    --gab-glow: rgba(3, 88, 247, 0.35);
+    --gab-google-blue: #4285F4;
+    --gab-google-red: #EA4335;
+    --gab-google-yellow: #FBBC04;
+    --gab-google-green: #34A853;
+    --gab-success: #2BD98A;
+    --gab-warn: #FFD400;
+    --gab-danger: #FA3D1D;
+    --gab-hero: linear-gradient(100deg, #1A6CFF 0%, #2EA6FF 18%, #2FC48C 38%, #F7C948 58%, #FF7A3C 72%, #7A3CFF 92%, #3A2CFF 100%);
+    --gab-surface: rgba(255, 255, 255, 0.06);
+    --gab-surface-elevated: rgba(255, 255, 255, 0.10);
+    --gab-border: rgba(255, 255, 255, 0.12);
+    --gab-text: #F4F5FF;
+    --gab-muted: #9AA0BC;
   }
 
   html {
     color-scheme: dark;
-    background-color: #0b1220;
+    background-color: var(--gab-bg);
     color: var(--gab-text);
   }
 
@@ -22,9 +36,8 @@
     font-family: var(--font-dm-sans), system-ui, sans-serif;
     background-color: #0b1220;
     background-image:
-      radial-gradient(circle at 12% 0%, rgba(20, 184, 166, 0.08), transparent 34%),
-      radial-gradient(circle at 86% 8%, rgba(139, 92, 246, 0.1), transparent 38%),
-      radial-gradient(circle at 50% 100%, rgba(37, 99, 235, 0.08), transparent 42%);
+      radial-gradient(circle at 12% -10%, rgba(66, 133, 244, 0.14), transparent 35%),
+      radial-gradient(circle at 95% 105%, rgba(253, 2, 245, 0.065), transparent 38%);
     color: var(--gab-text);
     overflow-x: hidden;
   }
@@ -117,4 +130,93 @@
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* V3 interface layer. Keep semantic Tailwind classes and existing auth controls intact. */
+.gab-shell {
+  background: var(--gab-bg);
+  color: var(--gab-text);
+  isolation: isolate;
+}
+.gab-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 15% -16%, rgba(66, 133, 244, .17), transparent 34%),
+    radial-gradient(circle at 90% 110%, rgba(234, 67, 53, .08), transparent 32%);
+}
+.gab-topbar {
+  background: rgba(8, 10, 22, .90);
+  border-color: rgba(255, 255, 255, .12);
+  backdrop-filter: blur(20px);
+}
+.gab-brand-mark {
+  background: conic-gradient(from 0deg, #4285F4, #34A853, #FBBC04, #EA4335, #4285F4);
+  border-radius: 12px;
+  box-shadow: 0 5px 24px rgba(66, 133, 244, .24);
+}
+.gab-sidebar {
+  background: rgba(10, 13, 28, .90);
+  border-color: rgba(255, 255, 255, .10);
+}
+.gab-right-sidebar {
+  background: rgba(10, 13, 28, .94);
+  border-color: rgba(255, 255, 255, .12);
+}
+.gab-pane {
+  background: rgba(18, 21, 39, .76);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .22);
+}
+.gab-pane:focus-within {
+  box-shadow: 0 0 0 1px rgba(138, 180, 248, .42), 0 18px 45px rgba(3, 88, 247, .14);
+}
+.gab-mission-hero {
+  background: var(--gab-hero);
+  color: #fff;
+  box-shadow: 0 20px 55px rgba(26, 108, 255, .16);
+}
+.gab-mission-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .13;
+  background-image: radial-gradient(#fff 1px, transparent 1px);
+  background-size: 4px 4px;
+}
+.gab-mission-launcher {
+  background: rgba(255, 255, 255, .06);
+  border-color: rgba(255, 255, 255, .12);
+  backdrop-filter: blur(22px);
+}
+.gab-quick-preset {
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .07);
+  border-radius: 999px;
+  padding: 6px 11px;
+  font-size: 11px;
+  color: #E8ECFF;
+  transition: background-color .18s ease, border-color .18s ease;
+}
+.gab-quick-preset:hover {
+  border-color: rgba(138, 180, 248, .6);
+  background: rgba(66, 133, 244, .18);
+}
+.gab-app-footer {
+  background: rgba(8, 10, 22, .90);
+  border-color: rgba(255, 255, 255, .10);
+}
+:where(button, a, input, textarea, select, [role="tab"]):focus-visible {
+  outline: 2px solid #8AB4F8;
+  outline-offset: 3px;
+}
+:where(button, input, textarea, select):disabled {
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gab-quick-preset { transition: none; }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
